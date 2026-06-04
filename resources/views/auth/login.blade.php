@@ -35,10 +35,16 @@
             {{-- PERSONALIZACIÓN: cambia el nombre de la aplicación. --}}
             <h1 class="h4 text-center mb-4 text-dark fw-semibold">Iniciar sesión</h1>
 
-            {{-- Mensaje de estado (ej. sesión expirada) --}}
             @if (session('status'))
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                     {{ session('status') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
+
+            @if (session('error'))
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ session('error') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @endif

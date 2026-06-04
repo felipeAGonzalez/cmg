@@ -13,8 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'prevent.back' => \App\Http\Middleware\PreventBackHistory::class,
-            'role'         => \App\Http\Middleware\EnsureUserHasRole::class,
+            'prevent.back'     => \App\Http\Middleware\PreventBackHistory::class,
+            'role'             => \App\Http\Middleware\EnsureUserHasRole::class,
+            'user.active'      => \App\Http\Middleware\EnsureUserIsActive::class,
+            'password.changed' => \App\Http\Middleware\EnsurePasswordIsChanged::class,
         ]);
 
         // Aplica no-cache a TODAS las rutas web: evita que el browser cachee
