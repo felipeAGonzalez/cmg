@@ -37,6 +37,8 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
 
             Route::get('/rooms/{room}/admit', [StayController::class, 'create'])->name('stays.create');
             Route::post('/rooms/{room}/admit', [StayController::class, 'store'])->name('stays.store');
+            Route::get('/rooms/{room}/birth', [StayController::class, 'createBirth'])->name('stays.createBirth');
+            Route::post('/rooms/{room}/birth', [StayController::class, 'storeBirth'])->name('stays.storeBirth');
             Route::get('/rooms/{room}/patient', [StayController::class, 'show'])->name('stays.show');
             Route::post('/stays/{stay}/discharge', [StayController::class, 'discharge'])->name('stays.discharge');
 

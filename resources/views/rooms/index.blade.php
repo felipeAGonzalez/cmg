@@ -76,10 +76,17 @@
                     @if($isAvailable)
                         <div class="fw-bold small" style="color:#2E7D32;">Disponible</div>
                     @else
-                        <div class="fw-bold small" style="color:#C62828;">Ocupado</div>
-                        <div class="text-muted mt-1" style="font-size:.78rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                            {{ $room->currentStay->patient->fullName() }}
+                        <div class="fw-bold small" style="color:#C62828;">
+                            Ocupado
+                            @if($room->currentStays->count() > 1)
+                                <span class="badge bg-danger ms-1">{{ $room->currentStays->count() }}</span>
+                            @endif
                         </div>
+                        @foreach($room->currentStays as $cs)
+                        <div class="text-muted mt-1" style="font-size:.78rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                            @if($cs->isBirth())<i class="bi bi-balloon-heart text-danger"></i> @endif{{ $cs->patient->fullName() }}
+                        </div>
+                        @endforeach
                     @endif
 
                     @if(Auth::user()->isAdmin())

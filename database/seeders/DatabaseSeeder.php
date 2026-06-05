@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             RootUserSeeder::class,
             UserSeeder::class,
             RoomSeeder::class,
+            DocumentSeeder::class,
         ]);
     }
 }

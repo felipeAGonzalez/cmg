@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,6 +13,7 @@ class Stay extends Model
     protected $fillable = [
         'patient_id',
         'room_id',
+        'birth_parent_stay_id',
         'diagnosis',
         'admission_date',
         'discharge_date',
@@ -35,6 +37,24 @@ class Stay extends Model
         return $this->belongsTo(Room::class);
     }
 
+    /** Estancia de la madre, si esta estancia es un nacimiento. */
+    public function birthParent(): BelongsTo
+    {
+        return $this->belongsTo(Stay::class, 'birth_parent_stay_id');
+    }
+
+    /** Nacimientos (bebés) ligados a esta estancia. */
+    public function births(): HasMany
+    {
+        return $this->hasMany(Stay::class, 'birth_parent_stay_id');
+    }
+
+    /** True si esta estancia es un recién nacido ligado a una madre. */
+    public function isBirth(): bool
+    {
+        return $this->birth_parent_stay_id !== null;
+    }
+
     public function stayDoctors(): HasMany
     {
         return $this->hasMany(StayDoctor::class);
@@ -53,6 +73,39 @@ class Stay extends Model
     public function instructions(): HasMany
     {
         return $this->hasMany(StayInstruction::class)->latest();
+    }
+
+    public function stayDocuments(): HasMany
+    {
+        return $this->hasMany(StayDocument::class);
+    }
+
+    /**
+     * Documentos de la estancia ordenados por el orden de despliegue del catálogo.
+     */
+    public function getDocumentsOrdered(): Collection
+    {
+        return $this->stayDocuments()
+            ->with('document')
+            ->get()
+            ->sortBy(fn ($sd) => sprintf('%010d-%s', $sd->document->display_order, $sd->document->name))
+            ->values();
+    }
+
+    /**
+     * Genera los stay_documents universales del catálogo para esta estancia.
+     * Idempotente: usa firstOrCreate para no duplicar si ya existen.
+     */
+    public function generateUniversalDocuments(): void
+    {
+        $universalDocuments = Document::active()->universal()->get();
+
+        foreach ($universalDocuments as $document) {
+            $this->stayDocuments()->firstOrCreate(
+                ['document_id' => $document->id],
+                ['status' => StayDocument::STATUS_PENDING],
+            );
+        }
     }
 
     public function isActive(): bool

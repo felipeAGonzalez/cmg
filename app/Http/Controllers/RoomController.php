@@ -13,7 +13,7 @@ class RoomController extends Controller
 {
     public function index(Request $request): View
     {
-        $rooms = Room::with(['currentStay.patient'])->orderBy('number')->get();
+        $rooms = Room::with(['currentStays.patient'])->orderBy('number')->get();
 
         $total     = $rooms->count();
         $available = $rooms->filter(fn($r) => $r->isAvailable())->count();
@@ -27,12 +27,14 @@ class RoomController extends Controller
                 if (is_numeric($search) && $room->number == (int) $search) {
                     return true;
                 }
-                $patient = $room->currentStay?->patient;
 
-                return $patient && str_contains(
-                    strtolower($patient->fullName()),
-                    strtolower($search)
-                );
+                // Coincide si cualquiera de los pacientes activos del cuarto coincide.
+                return $room->currentStays->contains(function ($stay) use ($search) {
+                    return $stay->patient && str_contains(
+                        strtolower($stay->patient->fullName()),
+                        strtolower($search)
+                    );
+                });
             });
         }
 

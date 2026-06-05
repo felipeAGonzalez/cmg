@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\DoctorSpecialty;
+use App\Http\Requests\StoreBirthRequest;
 use App\Http\Requests\StoreStayRequest;
 use App\Models\Patient;
 use App\Models\Room;
@@ -51,37 +52,111 @@ class StayController extends Controller
             $patient = Patient::create($request->only(['name', 'last_name_one', 'last_name_two', 'birth_date', 'gender']));
         }
 
-        Stay::create([
+        $stay = Stay::create([
             'patient_id'     => $patient->id,
             'room_id'        => $room->id,
             'diagnosis'      => $request->diagnosis,
             'admission_date' => $request->admission_date,
         ]);
 
+        // Genera automáticamente los documentos clínicos universales de la estancia.
+        $stay->generateUniversalDocuments();
+
         return redirect()->route('stays.show', $room)
             ->with('success', 'Paciente ingresado correctamente al Cuarto ' . $room->number . '.');
     }
 
-    public function show(Room $room): View|RedirectResponse
+    public function show(Room $room, Request $request): View|RedirectResponse
     {
-        if (! $room->currentStay) {
+        // Todas las estancias activas del cuarto (madre + recién nacido si aplica).
+        $currentStays = $room->currentStays()->with('patient')->get();
+
+        if ($currentStays->isEmpty()) {
             return redirect()->route('rooms.index')
                 ->with('warning', 'El Cuarto ' . $room->number . ' está disponible.');
         }
 
-        $stay = $room->currentStay()->with([
+        // Estancia seleccionada vía ?stay=; por defecto la principal (madre).
+        $selectedId = $request->query('stay');
+        $stay = $currentStays->firstWhere('id', (int) $selectedId) ?? $currentStays->first();
+
+        $stay->load([
             'patient',
+            'room',
             'currentDoctors.doctor',
             'roomTransfers.fromRoom',
             'roomTransfers.toRoom',
             'roomTransfers.transferredBy',
             'instructions.doctor',
-        ])->first();
+            'stayDocuments.document',
+        ]);
 
         $doctors    = User::where('role', 'doctor')->where('is_active', true)->orderBy('last_name_one')->get();
         $specialties = DoctorSpecialty::labels();
 
-        return view('stays.show', compact('room', 'stay', 'doctors', 'specialties'));
+        // Estancias pasadas (dadas de alta) del mismo paciente, para la tab Historial.
+        $previousStays = Stay::where('patient_id', $stay->patient_id)
+            ->whereNotNull('discharge_date')
+            ->where('id', '!=', $stay->id)
+            ->orderByDesc('admission_date')
+            ->with('room')
+            ->get();
+
+        return view('stays.show', compact('room', 'stay', 'currentStays', 'doctors', 'specialties', 'previousStays'));
+    }
+
+    public function createBirth(Room $room): View|RedirectResponse
+    {
+        if (! $room->canRegisterBirth()) {
+            return redirect()->route('stays.show', $room)
+                ->with('error', 'Solo se puede registrar un nacimiento cuando el cuarto tiene exactamente un paciente (la madre).');
+        }
+
+        $mother = $room->currentStays()->with('patient')->first();
+
+        return view('stays.birth', compact('room', 'mother'));
+    }
+
+    public function storeBirth(StoreBirthRequest $request, Room $room): RedirectResponse
+    {
+        if (! $room->canRegisterBirth()) {
+            return redirect()->route('stays.show', $room)
+                ->with('error', 'No es posible registrar el nacimiento: el cuarto no tiene exactamente un paciente activo.');
+        }
+
+        $mother = $room->currentStays()->first();
+
+        // Reutiliza expediente del bebé si ya existe y no tiene estancia activa.
+        $existingPatient = Patient::searchByFullName(
+            $request->name,
+            $request->last_name_one,
+            $request->last_name_two,
+            $request->birth_date
+        )->first();
+
+        if ($existingPatient) {
+            if ($existingPatient->currentStay) {
+                return back()
+                    ->withErrors(['name' => 'Este paciente ya tiene una estancia activa en el Cuarto ' . $existingPatient->currentStay->room->number . '.'])
+                    ->withInput();
+            }
+            $patient = $existingPatient;
+        } else {
+            $patient = Patient::create($request->only(['name', 'last_name_one', 'last_name_two', 'birth_date', 'gender']));
+        }
+
+        $birthStay = Stay::create([
+            'patient_id'           => $patient->id,
+            'room_id'              => $room->id,
+            'birth_parent_stay_id' => $mother->id,
+            'diagnosis'            => $request->diagnosis,
+            'admission_date'       => $request->admission_date,
+        ]);
+
+        $birthStay->generateUniversalDocuments();
+
+        return redirect()->route('stays.show', ['room' => $room, 'stay' => $birthStay->id])
+            ->with('success', 'Nacimiento registrado correctamente. El recién nacido fue ingresado al Cuarto ' . $room->number . '.');
     }
 
     public function discharge(Stay $stay): RedirectResponse
