@@ -146,11 +146,16 @@
                                 <th>Documento</th>
                                 <th class="d-none d-md-table-cell">Tipo</th>
                                 <th>Estado</th>
+                                <th class="text-end">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($documents as $sd)
-                            @php $doc = $sd->document; @endphp
+                            @php
+                                $doc          = $sd->document;
+                                $isFrontSheet = $doc->code === 'front_sheet';
+                                $isCompleted  = $sd->status === \App\Models\StayDocument::STATUS_COMPLETED;
+                            @endphp
                             <tr>
                                 <td>
                                     <span class="d-inline-flex align-items-center justify-content-center rounded-circle"
@@ -173,6 +178,18 @@
                                 </td>
                                 <td>
                                     <span class="badge {{ $sd->statusBadgeClass() }}">{{ $sd->statusLabel() }}</span>
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    @if($isFrontSheet && $isCompleted)
+                                        <a href="{{ route('frontSheet.pdf', $stay) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> Ver
+                                        </a>
+                                    @else
+                                        <button type="button" class="btn btn-sm btn-outline-primary" disabled
+                                                title="{{ $isFrontSheet ? 'Aún no ha sido llenada' : 'Próximamente' }}">
+                                            <i class="bi bi-eye"></i> Ver
+                                        </button>
+                                    @endif
                                 </td>
                             </tr>
                             @endforeach

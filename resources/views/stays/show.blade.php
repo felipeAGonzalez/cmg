@@ -243,16 +243,34 @@
                                     <span class="badge {{ $sd->statusBadgeClass() }}">{{ $sd->statusLabel() }}</span>
                                 </td>
                                 @if(! $user->isDoctor())
+                                @php
+                                    $isFrontSheet = $doc->code === 'front_sheet';
+                                    $isCompleted  = $sd->status === \App\Models\StayDocument::STATUS_COMPLETED;
+                                @endphp
                                 <td class="text-end text-nowrap">
-                                    {{-- TODO: Implementar funcionalidad en próximo avance --}}
-                                    <button type="button" class="btn btn-sm btn-outline-primary" disabled
-                                            title="{{ $blockedUntilDischarge ? 'Disponible al dar de alta' : 'Próximamente' }}">
-                                        <i class="bi bi-pencil"></i> Llenar
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-primary" disabled
-                                            title="Próximamente">
-                                        <i class="bi bi-eye"></i> Ver
-                                    </button>
+                                    {{-- Llenar --}}
+                                    @if($isFrontSheet)
+                                        <a href="{{ route('frontSheet.edit', $stay) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i> Llenar
+                                        </a>
+                                    @else
+                                        <button type="button" class="btn btn-sm btn-outline-primary" disabled
+                                                title="{{ $blockedUntilDischarge ? 'Disponible al dar de alta' : 'Próximamente' }}">
+                                            <i class="bi bi-pencil"></i> Llenar
+                                        </button>
+                                    @endif
+
+                                    {{-- Ver --}}
+                                    @if($isFrontSheet && $isCompleted)
+                                        <a href="{{ route('frontSheet.pdf', $stay) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> Ver
+                                        </a>
+                                    @else
+                                        <button type="button" class="btn btn-sm btn-outline-primary" disabled
+                                                title="{{ $isFrontSheet ? 'Llena el documento primero' : 'Próximamente' }}">
+                                            <i class="bi bi-eye"></i> Ver
+                                        </button>
+                                    @endif
                                 </td>
                                 @endif
                             </tr>

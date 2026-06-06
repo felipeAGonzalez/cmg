@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DoctorController;
+use App\Http\Controllers\FrontSheetController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PasswordChangeController;
 use App\Http\Controllers\PatientController;
@@ -50,6 +51,15 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
 
             // Escribir instrucción en nombre de un médico asignado (admin + nurse)
             Route::post('/stays/{stay}/instructions', [StayController::class, 'storeInstruction'])->name('stays.storeInstruction');
+
+            // Hoja Frontal: llenar / editar (admin + nurse)
+            Route::get('/stays/{stay}/front-sheet/edit', [FrontSheetController::class, 'edit'])->name('frontSheet.edit');
+            Route::put('/stays/{stay}/front-sheet', [FrontSheetController::class, 'update'])->name('frontSheet.update');
+        });
+
+        // ─── Hoja Frontal PDF (admin + nurse + médicos asignados) ────────────
+        Route::middleware('role:admin,nurse,doctor')->group(function () {
+            Route::get('/stays/{stay}/front-sheet/pdf', [FrontSheetController::class, 'pdf'])->name('frontSheet.pdf');
         });
 
         // ─── Traslado de cuartos (solo nurse) ───────────────────────────────
