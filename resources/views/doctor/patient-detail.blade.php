@@ -49,6 +49,16 @@
             </button>
         </li>
         <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nursing" type="button" role="tab">
+                <i class="bi bi-clipboard2-pulse me-1"></i>Hojas de Enfermería
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#indications" type="button" role="tab">
+                <i class="bi bi-prescription2 me-1"></i>Indicaciones
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab">
                 <i class="bi bi-file-earmark-text me-1"></i>Documentos
             </button>
@@ -123,6 +133,111 @@
                         </div>
                         @endforeach
                     </div>
+                @endif
+            </div>
+        </div>
+
+        {{-- ────────── TAB: Hojas de Enfermería (solo lectura) ────────── --}}
+        <div class="tab-pane fade" id="nursing" role="tabpanel">
+            <h6 class="fw-bold text-primary mb-3 border-bottom pb-2">
+                <i class="bi bi-clipboard2-pulse me-1"></i>Hojas de Enfermería
+            </h6>
+
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="fw-bold mb-1"><i class="bi bi-rulers me-1"></i>Talla y peso de esta estancia</div>
+                    @if($stay->height_cm || $stay->weight_kg)
+                        <div class="text-muted small">
+                            Talla: <strong>{{ $stay->height_cm ? rtrim(rtrim(number_format($stay->height_cm, 2), '0'), '.') . ' cm' : '—' }}</strong>
+                            &nbsp;·&nbsp;
+                            Peso: <strong>{{ $stay->weight_kg ? rtrim(rtrim(number_format($stay->weight_kg, 2), '0'), '.') . ' kg' : '—' }}</strong>
+                        </div>
+                    @else
+                        <div class="text-muted small">Aún no se han capturado la talla y el peso.</div>
+                    @endif
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-4">
+                    <i class="bi bi-clipboard2-pulse text-primary" style="font-size:2.5rem;"></i>
+                    <p class="text-muted mb-3 mt-2">
+                        Consulta los signos vitales y el resumen de turno registrados por enfermería.
+                    </p>
+                    <a href="{{ route('nursingSheets.index', $stay) }}" class="btn btn-primary">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>Abrir Hojas de Enfermería
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {{-- ────────── TAB: Indicaciones ────────── --}}
+        <div class="tab-pane fade" id="indications" role="tabpanel">
+            <h6 class="fw-bold text-primary mb-3 border-bottom pb-2">
+                <i class="bi bi-prescription2 me-1"></i>Indicaciones — Prescripciones
+            </h6>
+
+            @php
+                $medOrders    = $stay->medicationOrders;
+                $medActive    = $medOrders->filter->isActive();
+                $medSuspended = $medOrders->filter->isSuspended();
+                $medFinished  = $medOrders->filter->isFinished();
+                $isAssigned   = $stay->currentDoctors->where('doctor_id', $doctor->id)->count() > 0;
+            @endphp
+
+            <div class="row g-2 mb-3">
+                <div class="col-4">
+                    <div class="card border-0 shadow-sm text-center py-2">
+                        <div class="fw-bold fs-4 text-success">{{ $medActive->count() }}</div>
+                        <div class="text-muted small">Activas</div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="card border-0 shadow-sm text-center py-2">
+                        <div class="fw-bold fs-4 text-warning">{{ $medSuspended->count() }}</div>
+                        <div class="text-muted small">Suspendidas</div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="card border-0 shadow-sm text-center py-2">
+                        <div class="fw-bold fs-4 text-secondary">{{ $medFinished->count() }}</div>
+                        <div class="text-muted small">Finalizadas</div>
+                    </div>
+                </div>
+            </div>
+
+            @if($medActive->isNotEmpty())
+                <div class="list-group mb-3">
+                    @foreach($medActive->take(3) as $preview)
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-bold">{{ $preview->medication_name }}</span>
+                            <span class="text-muted">· {{ $preview->dose }}</span>
+                            <div class="text-muted small">{{ $preview->frequencyLabel() }} · {{ $preview->routeLabel() }}</div>
+                        </div>
+                        @if($preview->progressLabel())
+                            <span class="badge bg-light text-dark border">{{ $preview->progressLabel() }}</span>
+                        @else
+                            <span class="badge bg-light text-dark border">Sin duración</span>
+                        @endif
+                    </div>
+                    @endforeach
+                </div>
+                @if($medActive->count() > 3)
+                    <p class="text-muted small">… y {{ $medActive->count() - 3 }} prescripción(es) activa(s) más.</p>
+                @endif
+            @else
+                <p class="text-muted fst-italic">Sin prescripciones activas.</p>
+            @endif
+
+            <div class="d-flex gap-2">
+                <a href="{{ route('medicationOrders.index', $stay) }}" class="btn btn-primary">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Abrir Indicaciones del paciente
+                </a>
+                @if($isAssigned && $stay->isActive())
+                    <a href="{{ route('medicationOrders.create', $stay) }}" class="btn btn-outline-primary">
+                        <i class="bi bi-plus-circle me-1"></i>Nueva prescripción
+                    </a>
                 @endif
             </div>
         </div>
@@ -256,7 +371,7 @@
 document.addEventListener('DOMContentLoaded', function () {
 
     // ── Anclas de tabs en la URL ──────────────────────────────
-    const validHashes = ['#medics', '#documents'];
+    const validHashes = ['#medics', '#nursing', '#indications', '#documents'];
     const initialHash = window.location.hash;
     if (validHashes.includes(initialHash)) {
         const trigger = document.querySelector('[data-bs-target="' + initialHash + '"]');

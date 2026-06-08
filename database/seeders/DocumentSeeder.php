@@ -9,6 +9,16 @@ class DocumentSeeder extends Seeder
 {
     public function run(): void
     {
+        // Migración de nombre heredado: el documento 'medical_history'
+        // ("Historia Clínica") fue renombrado por el cliente a 'nursing_sheets'
+        // ("Hojas de Enfermería"). Se renombra en sitio para no huérfanar los
+        // stay_documents existentes que ya apuntan a ese registro.
+        Document::where('code', 'medical_history')->update([
+            'code'        => 'nursing_sheets',
+            'name'        => 'Hojas de Enfermería',
+            'description' => 'Registros clínicos, signos vitales y observaciones de enfermería.',
+        ]);
+
         $documents = [
             [
                 'code'                   => 'front_sheet',
@@ -21,9 +31,9 @@ class DocumentSeeder extends Seeder
                 'display_order'          => 1,
             ],
             [
-                'code'                   => 'medical_history',
-                'name'                   => 'Historia Clínica',
-                'description'            => 'Antecedentes médicos y exploración del paciente.',
+                'code'                   => 'nursing_sheets',
+                'name'                   => 'Hojas de Enfermería',
+                'description'            => 'Registros clínicos, signos vitales y observaciones de enfermería.',
                 'icon'                   => 'bi-clipboard2-pulse',
                 'type'                   => 'medical_note',
                 'is_universal'           => true,

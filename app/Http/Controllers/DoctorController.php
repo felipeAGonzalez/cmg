@@ -47,6 +47,7 @@ class DoctorController extends Controller
             'roomTransfers.transferredBy',
             'instructions.doctor',
             'stayDocuments.document',
+            'medicationOrders.prescribedBy',
         ]);
 
         $myAssignment = $stay->currentDoctors->where('doctor_id', $doctor->id)->first();

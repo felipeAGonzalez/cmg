@@ -89,6 +89,7 @@ class StayController extends Controller
             'roomTransfers.transferredBy',
             'instructions.doctor',
             'stayDocuments.document',
+            'medicationOrders.prescribedBy',
         ]);
 
         $doctors    = User::where('role', 'doctor')->where('is_active', true)->orderBy('last_name_one')->get();
@@ -167,6 +168,13 @@ class StayController extends Controller
 
         $room = $stay->room;
         $stay->update(['discharge_date' => now()]);
+
+        // Al egresar, se suspenden automáticamente las prescripciones activas.
+        $stay->medicationOrders()->whereNull('suspended_at')->update([
+            'suspended_at'      => now(),
+            'suspended_by_id'   => auth()->id(),
+            'suspension_reason' => 'Finalizada por egreso del paciente.',
+        ]);
 
         return redirect()->route('rooms.index')
             ->with('success', 'Paciente dado de alta. El Cuarto ' . $room->number . ' volvió a estar disponible.');

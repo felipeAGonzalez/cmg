@@ -15,6 +15,8 @@ class Stay extends Model
         'room_id',
         'birth_parent_stay_id',
         'diagnosis',
+        'height_cm',
+        'weight_kg',
         'admission_date',
         'discharge_date',
     ];
@@ -78,6 +80,26 @@ class Stay extends Model
     public function stayDocuments(): HasMany
     {
         return $this->hasMany(StayDocument::class);
+    }
+
+    public function vitalSignReadings(): HasMany
+    {
+        return $this->hasMany(VitalSignReading::class);
+    }
+
+    public function shiftSummaries(): HasMany
+    {
+        return $this->hasMany(ShiftSummary::class);
+    }
+
+    public function medicationOrders(): HasMany
+    {
+        return $this->hasMany(MedicationOrder::class);
+    }
+
+    public function medicationAdministrations(): HasMany
+    {
+        return $this->hasMany(MedicationAdministration::class);
     }
 
     /**

@@ -3,13 +3,19 @@
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\FrontSheetController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MedicationAdministrationController;
+use App\Http\Controllers\MedicationOrderController;
+use App\Http\Controllers\NursingSheetController;
 use App\Http\Controllers\PasswordChangeController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\RoomTransferController;
+use App\Http\Controllers\ShiftSummaryController;
 use App\Http\Controllers\StayController;
 use App\Http\Controllers\StayDoctorController;
+use App\Http\Controllers\StayMeasurementController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VitalSignController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -55,6 +61,49 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
             // Hoja Frontal: llenar / editar (admin + nurse)
             Route::get('/stays/{stay}/front-sheet/edit', [FrontSheetController::class, 'edit'])->name('frontSheet.edit');
             Route::put('/stays/{stay}/front-sheet', [FrontSheetController::class, 'update'])->name('frontSheet.update');
+
+            // Talla y peso de la estancia (admin + nurse)
+            Route::get('/stays/{stay}/measurements', [StayMeasurementController::class, 'edit'])->name('stays.measurements.edit');
+            Route::put('/stays/{stay}/measurements', [StayMeasurementController::class, 'update'])->name('stays.measurements.update');
+
+            // Hojas de Enfermería: captura (admin + nurse)
+            Route::post('/stays/{stay}/vital-signs', [VitalSignController::class, 'store'])->name('vitalSigns.store');
+            Route::put('/vital-signs/{vitalSignReading}', [VitalSignController::class, 'update'])->name('vitalSigns.update');
+            Route::delete('/vital-signs/{vitalSignReading}', [VitalSignController::class, 'destroy'])->name('vitalSigns.destroy');
+
+            Route::get('/stays/{stay}/shift-summary', [ShiftSummaryController::class, 'edit'])->name('shiftSummary.edit');
+            Route::put('/stays/{stay}/shift-summary', [ShiftSummaryController::class, 'update'])->name('shiftSummary.update');
+        });
+
+        // ─── Hojas de Enfermería: consulta (admin + nurse + médicos asignados) ─
+        Route::middleware('role:admin,nurse,doctor')->group(function () {
+            Route::get('/stays/{stay}/nursing-sheets', [NursingSheetController::class, 'index'])->name('nursingSheets.index');
+        });
+
+        // ─── Indicaciones / prescripciones (admin + doctor + nurse) ──────────
+        // La validación fina de permisos se hace en el controlador.
+        Route::middleware('role:admin,doctor,nurse')->group(function () {
+            Route::get('/stays/{stay}/medication-orders', [MedicationOrderController::class, 'index'])->name('medicationOrders.index');
+            Route::get('/stays/{stay}/medication-orders/create', [MedicationOrderController::class, 'create'])->name('medicationOrders.create');
+            Route::post('/stays/{stay}/medication-orders', [MedicationOrderController::class, 'store'])->name('medicationOrders.store');
+            Route::get('/medication-orders/{medicationOrder}/edit', [MedicationOrderController::class, 'edit'])->name('medicationOrders.edit');
+            Route::put('/medication-orders/{medicationOrder}', [MedicationOrderController::class, 'update'])->name('medicationOrders.update');
+            Route::get('/medication-orders/{medicationOrder}/suspend', [MedicationOrderController::class, 'suspendForm'])->name('medicationOrders.suspendForm');
+            Route::post('/medication-orders/{medicationOrder}/suspend', [MedicationOrderController::class, 'suspend'])->name('medicationOrders.suspend');
+        });
+
+        // ─── Administraciones de medicamentos ────────────────────────────────
+        // Consulta: admin + nurse + médicos asignados (validación en controlador).
+        Route::middleware('role:admin,doctor,nurse')->group(function () {
+            Route::get('/stays/{stay}/medication-administrations', [MedicationAdministrationController::class, 'index'])->name('medicationAdministrations.index');
+        });
+        // Captura/edición/eliminación: solo admin + nurse.
+        Route::middleware('role:admin,nurse')->group(function () {
+            Route::get('/stays/{stay}/medication-administrations/create', [MedicationAdministrationController::class, 'create'])->name('medicationAdministrations.create');
+            Route::post('/stays/{stay}/medication-administrations', [MedicationAdministrationController::class, 'store'])->name('medicationAdministrations.store');
+            Route::get('/medication-administrations/{medicationAdministration}/edit', [MedicationAdministrationController::class, 'edit'])->name('medicationAdministrations.edit');
+            Route::put('/medication-administrations/{medicationAdministration}', [MedicationAdministrationController::class, 'update'])->name('medicationAdministrations.update');
+            Route::delete('/medication-administrations/{medicationAdministration}', [MedicationAdministrationController::class, 'destroy'])->name('medicationAdministrations.destroy');
         });
 
         // ─── Hoja Frontal PDF (admin + nurse + médicos asignados) ────────────
