@@ -102,6 +102,11 @@ class Stay extends Model
         return $this->hasMany(MedicationAdministration::class);
     }
 
+    public function nursingEntries(): HasMany
+    {
+        return $this->hasMany(NursingEntry::class);
+    }
+
     /**
      * Documentos de la estancia ordenados por el orden de despliegue del catálogo.
      */

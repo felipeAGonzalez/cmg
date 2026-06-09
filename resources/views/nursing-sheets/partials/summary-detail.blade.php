@@ -15,7 +15,6 @@
         'Lab / productos biológicos'     => $summary->lab_biological_products,
         'Reactivos'                      => $summary->reagents,
         'Estudios / operaciones'         => $summary->studies_operations,
-        'Observaciones'                  => $summary->observations,
     ];
     $hasData = collect($fields)->contains(fn ($v) => $v !== null && $v !== '');
 @endphp

@@ -5,6 +5,7 @@ use App\Http\Controllers\FrontSheetController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MedicationAdministrationController;
 use App\Http\Controllers\MedicationOrderController;
+use App\Http\Controllers\NursingEntryController;
 use App\Http\Controllers\NursingSheetController;
 use App\Http\Controllers\PasswordChangeController;
 use App\Http\Controllers\PatientController;
@@ -104,6 +105,20 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
             Route::get('/medication-administrations/{medicationAdministration}/edit', [MedicationAdministrationController::class, 'edit'])->name('medicationAdministrations.edit');
             Route::put('/medication-administrations/{medicationAdministration}', [MedicationAdministrationController::class, 'update'])->name('medicationAdministrations.update');
             Route::delete('/medication-administrations/{medicationAdministration}', [MedicationAdministrationController::class, 'destroy'])->name('medicationAdministrations.destroy');
+        });
+
+        // ─── Notas y registros de enfermería ─────────────────────────────────
+        // Consulta: admin + nurse + médicos asignados (validación en controlador).
+        Route::middleware('role:admin,doctor,nurse')->group(function () {
+            Route::get('/stays/{stay}/nursing-entries', [NursingEntryController::class, 'index'])->name('nursingEntries.index');
+        });
+        // Captura/edición/eliminación: solo admin + nurse.
+        Route::middleware('role:admin,nurse')->group(function () {
+            Route::get('/stays/{stay}/nursing-entries/create', [NursingEntryController::class, 'create'])->name('nursingEntries.create');
+            Route::post('/stays/{stay}/nursing-entries', [NursingEntryController::class, 'store'])->name('nursingEntries.store');
+            Route::get('/nursing-entries/{nursingEntry}/edit', [NursingEntryController::class, 'edit'])->name('nursingEntries.edit');
+            Route::put('/nursing-entries/{nursingEntry}', [NursingEntryController::class, 'update'])->name('nursingEntries.update');
+            Route::delete('/nursing-entries/{nursingEntry}', [NursingEntryController::class, 'destroy'])->name('nursingEntries.destroy');
         });
 
         // ─── Hoja Frontal PDF (admin + nurse + médicos asignados) ────────────

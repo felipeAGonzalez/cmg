@@ -23,7 +23,6 @@ class ShiftSummary extends Model
         'lab_biological_products',
         'reagents',
         'studies_operations',
-        'observations',
         'recorded_by',
     ];
 

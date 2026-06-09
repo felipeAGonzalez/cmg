@@ -25,7 +25,6 @@ class UpdateShiftSummaryRequest extends FormRequest
             'lab_biological_products'     => ['nullable', 'string', 'max:2000'],
             'reagents'                    => ['nullable', 'string', 'max:2000'],
             'studies_operations'          => ['nullable', 'string', 'max:2000'],
-            'observations'                => ['nullable', 'string', 'max:2000'],
         ];
     }
 

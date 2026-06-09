@@ -176,6 +176,70 @@
         </div>
     </div>
 
+    {{-- ════════ NOTAS Y REGISTROS DE ENFERMERÍA ════════ --}}
+    @php
+        $recentEntries = \App\Models\NursingEntry::forStay($stay->id)
+            ->with('recordedBy')
+            ->limit(10)
+            ->get();
+    @endphp
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center">
+            <h6 class="fw-bold text-primary mb-0">
+                <i class="bi bi-journal-text me-1"></i>Notas y registros de enfermería
+            </h6>
+            @if($user->isAdmin() || $user->isNurse())
+                <a href="{{ route('nursingEntries.create', $stay) }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i>Nuevo registro
+                </a>
+            @endif
+        </div>
+        <div class="card-body">
+            @if($recentEntries->isEmpty())
+                <p class="text-muted fst-italic mb-0">Aún no se han registrado notas.</p>
+            @else
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr><th>Hora</th><th>Categoría</th><th>Descripción</th><th>Enfermera</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach($recentEntries as $entry)
+                            <tr>
+                                <td class="text-nowrap small">{{ $entry->recorded_at->format('d/m H:i') }}</td>
+                                <td>
+                                    <span class="badge {{ $entry->categoryBadgeClass() }}">
+                                        <i class="bi {{ $entry->categoryIcon() }} me-1"></i>{{ $entry->categoryLabel() }}
+                                    </span>
+                                </td>
+                                <td>{{ \Illuminate\Support\Str::limit($entry->description, 80) }}</td>
+                                <td class="text-muted small">{{ $entry->recordedBy?->fullName() ?? '—' }}</td>
+                                <td class="text-end text-nowrap">
+                                    @if($entry->isEditable() && ($user->isAdmin() || $user->isNurse()))
+                                        <a href="{{ route('nursingEntries.edit', $entry) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form method="POST" action="{{ route('nursingEntries.destroy', $entry) }}"
+                                              class="d-inline" onsubmit="return confirm('¿Eliminar este registro?');">
+                                            @csrf @method('DELETE')
+                                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    @endif
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-2">
+                    <a href="{{ route('nursingEntries.index', $stay) }}" class="btn btn-sm btn-link px-0">
+                        Ver todas las notas y registros →
+                    </a>
+                </div>
+            @endif
+        </div>
+    </div>
+
     {{-- ════════ HISTORIAL — TURNOS ANTERIORES ════════ --}}
     <div class="card border-0 shadow-sm mb-3">
         <div class="card-header bg-white">

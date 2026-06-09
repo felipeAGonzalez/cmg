@@ -140,21 +140,12 @@
                 </div>
             </div>
 
-            {{-- 5. Observaciones --}}
-            <div class="accordion-item">
-                <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sec5">
-                        <i class="bi bi-chat-left-text me-2"></i>Observaciones del turno
-                    </button>
-                </h2>
-                <div id="sec5" class="accordion-collapse collapse" data-bs-parent="#summaryAccordion">
-                    <div class="accordion-body">
-                        <textarea id="observations" name="observations" rows="5" maxlength="2000"
-                                  class="form-control">{{ old('observations', $summary->observations) }}</textarea>
-                    </div>
-                </div>
-            </div>
+        </div>
 
+        <div class="alert alert-info border-0 shadow-sm">
+            <i class="bi bi-info-circle me-1"></i>
+            Las observaciones puntuales se registran ahora en la sección
+            <strong>Notas y registros</strong> del módulo de Hojas de Enfermería.
         </div>
 
         <div class="d-flex gap-2">
