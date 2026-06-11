@@ -35,12 +35,26 @@ class MedicationOrderController extends Controller
         // Agrupar por estado calculado en vivo.
         $grouped = $orders->groupBy(fn ($o) => $o->status());
 
+        // Órdenes de balance de líquidos (tab "Otras indicaciones").
+        $activeFluidBalanceOrder = $stay->fluidBalanceOrders()
+            ->whereNull('suspended_at')
+            ->with(['prescribedBy', 'createdBy'])
+            ->first();
+
+        $pastFluidBalanceOrders = $stay->fluidBalanceOrders()
+            ->whereNotNull('suspended_at')
+            ->with(['prescribedBy', 'suspendedBy'])
+            ->orderByDesc('suspended_at')
+            ->get();
+
         return view('medication-orders.index', [
-            'stay'            => $stay,
-            'orders'          => $orders,
-            'activeOrders'    => $grouped[MedicationOrder::STATUS_ACTIVE] ?? collect(),
-            'suspendedOrders' => $grouped[MedicationOrder::STATUS_SUSPENDED] ?? collect(),
-            'finishedOrders'  => $grouped[MedicationOrder::STATUS_FINISHED] ?? collect(),
+            'stay'                    => $stay,
+            'orders'                  => $orders,
+            'activeOrders'            => $grouped[MedicationOrder::STATUS_ACTIVE] ?? collect(),
+            'suspendedOrders'         => $grouped[MedicationOrder::STATUS_SUSPENDED] ?? collect(),
+            'finishedOrders'          => $grouped[MedicationOrder::STATUS_FINISHED] ?? collect(),
+            'activeFluidBalanceOrder' => $activeFluidBalanceOrder,
+            'pastFluidBalanceOrders'  => $pastFluidBalanceOrders,
         ]);
     }
 

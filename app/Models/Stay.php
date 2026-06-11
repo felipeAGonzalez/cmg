@@ -107,6 +107,17 @@ class Stay extends Model
         return $this->hasMany(NursingEntry::class);
     }
 
+    public function fluidBalanceOrders(): HasMany
+    {
+        return $this->hasMany(FluidBalanceOrder::class);
+    }
+
+    /** La orden de balance de líquidos activa (única), o null. */
+    public function activeFluidBalanceOrder(): ?FluidBalanceOrder
+    {
+        return $this->fluidBalanceOrders()->whereNull('suspended_at')->first();
+    }
+
     /**
      * Documentos de la estancia ordenados por el orden de despliegue del catálogo.
      */

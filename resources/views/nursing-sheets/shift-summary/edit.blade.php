@@ -100,7 +100,7 @@
                         </div>
                         <div class="col-md-4">
                             <label for="evacuations_count" class="form-label fw-semibold">Evacuaciones</label>
-                            <input type="number" min="0" max="50" id="evacuations_count" name="evacuations_count"
+                            <input type="number" min="0" max="1500" id="evacuations_count" name="evacuations_count"
                                    class="form-control" value="{{ old('evacuations_count', $summary->evacuations_count) }}">
                         </div>
                         <div class="col-md-4">

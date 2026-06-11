@@ -267,9 +267,10 @@
                         <tbody>
                             @foreach($documents as $sd)
                             @php
-                                $doc          = $sd->document;
-                                $isFrontSheet = $doc->code === 'front_sheet';
-                                $isCompleted  = $sd->status === \App\Models\StayDocument::STATUS_COMPLETED;
+                                $doc             = $sd->document;
+                                $isFrontSheet    = $doc->code === 'front_sheet';
+                                $isNursingSheets = $doc->code === 'nursing_sheets';
+                                $isCompleted     = $sd->status === \App\Models\StayDocument::STATUS_COMPLETED;
                             @endphp
                             <tr>
                                 <td>
@@ -297,6 +298,10 @@
                                 <td class="text-end text-nowrap">
                                     @if($isFrontSheet && $isCompleted)
                                         <a href="{{ route('frontSheet.pdf', $stay) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> Ver
+                                        </a>
+                                    @elseif($isNursingSheets)
+                                        <a href="{{ route('nursingSheets.pdf', $stay) }}" target="_blank" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-eye"></i> Ver
                                         </a>
                                     @else

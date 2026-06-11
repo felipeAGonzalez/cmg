@@ -396,6 +396,10 @@
                                         <a href="{{ route('frontSheet.pdf', $stay) }}" target="_blank" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-eye"></i> Ver
                                         </a>
+                                    @elseif($isNursingSheets)
+                                        <a href="{{ route('nursingSheets.pdf', $stay) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> Ver
+                                        </a>
                                     @else
                                         <button type="button" class="btn btn-sm btn-outline-primary" disabled
                                                 title="{{ $isFrontSheet ? 'Llena el documento primero' : 'Próximamente' }}">

@@ -176,6 +176,24 @@ class StayController extends Controller
             'suspension_reason' => 'Finalizada por egreso del paciente.',
         ]);
 
+        // Igual para la orden de balance de líquidos activa (si existe).
+        $stay->fluidBalanceOrders()->whereNull('suspended_at')->update([
+            'suspended_at'      => now(),
+            'suspended_by_id'   => auth()->id(),
+            'suspension_reason' => \App\Models\FluidBalanceOrder::DISCHARGE_REASON,
+        ]);
+
+        // El documento de Hojas de Enfermería queda completo al egresar el paciente.
+        $nursingSheetsDocument = \App\Models\Document::where('code', 'nursing_sheets')->first();
+        if ($nursingSheetsDocument) {
+            \App\Models\StayDocument::where('stay_id', $stay->id)
+                ->where('document_id', $nursingSheetsDocument->id)
+                ->update([
+                    'status'       => \App\Models\StayDocument::STATUS_COMPLETED,
+                    'completed_at' => now(),
+                ]);
+        }
+
         return redirect()->route('rooms.index')
             ->with('success', 'Paciente dado de alta. El Cuarto ' . $room->number . ' volvió a estar disponible.');
     }

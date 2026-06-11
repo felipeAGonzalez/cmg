@@ -23,11 +23,6 @@
                 </div>
             </div>
             <div class="d-flex gap-2">
-                @if($canPrescribe)
-                    <a href="{{ route('medicationOrders.create', $stay) }}" class="btn btn-primary btn-sm">
-                        <i class="bi bi-plus-circle me-1"></i>Nueva prescripción
-                    </a>
-                @endif
                 <a href="{{ route('stays.show', ['room' => $stay->room, 'stay' => $stay->id]) }}#indications"
                    class="btn btn-outline-secondary btn-sm">
                     <i class="bi bi-arrow-left me-1"></i>Volver al paciente
@@ -38,6 +33,38 @@
 
     @if(session('success'))<div class="alert alert-success border-0 shadow-sm">{{ session('success') }}</div>@endif
     @if(session('error'))<div class="alert alert-danger border-0 shadow-sm">{{ session('error') }}</div>@endif
+
+    @php $otherCount = ($activeFluidBalanceOrder ? 1 : 0) + $pastFluidBalanceOrders->count(); @endphp
+
+    {{-- ════════ SUB-TABS INTERNAS ════════ --}}
+    <ul class="nav nav-pills mb-4" id="indicationsTabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#medications-tab" type="button">
+                <i class="bi bi-capsule me-1"></i>Medicamentos
+                <span class="badge bg-light text-dark ms-1">{{ $orders->count() }}</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#other-indications-tab" type="button">
+                <i class="bi bi-clipboard2-pulse me-1"></i>Otras indicaciones
+                <span class="badge bg-light text-dark ms-1">{{ $otherCount }}</span>
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+    {{-- ════════════════════════════════════════════ --}}
+    {{-- TAB MEDICAMENTOS                              --}}
+    {{-- ════════════════════════════════════════════ --}}
+    <div class="tab-pane fade show active" id="medications-tab" role="tabpanel">
+
+    @if($canPrescribe)
+        <div class="d-flex justify-content-end mb-3">
+            <a href="{{ route('medicationOrders.create', $stay) }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle me-1"></i>Nueva prescripción
+            </a>
+        </div>
+    @endif
 
     @if($orders->isEmpty())
         {{-- ════════ VISTA VACÍA ════════ --}}
@@ -216,6 +243,134 @@
 
         </div>
     @endif
+
+    </div>{{-- /tab medications --}}
+
+    {{-- ════════════════════════════════════════════ --}}
+    {{-- TAB OTRAS INDICACIONES                        --}}
+    {{-- ════════════════════════════════════════════ --}}
+    <div class="tab-pane fade" id="other-indications-tab" role="tabpanel">
+
+        {{-- ──── Balance de líquidos ──── --}}
+        @php
+            $canStartBalance = $stay->isActive() && (
+                $user->isAdmin()
+                || ($user->isDoctor() && $stay->currentDoctors->where('doctor_id', $user->id)->count() > 0)
+                || ($user->isNurse() && $stay->currentDoctors->count() > 0)
+            );
+        @endphp
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold text-primary mb-0"><i class="bi bi-droplet-half me-1"></i>Balance de líquidos</h6>
+                @if(! $activeFluidBalanceOrder && $canStartBalance)
+                    <a href="{{ route('fluidBalanceOrders.create', $stay) }}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i>Iniciar balance
+                    </a>
+                @endif
+            </div>
+            <div class="card-body">
+                @if($activeFluidBalanceOrder)
+                    {{-- Orden activa --}}
+                    <div class="alert alert-success border-0 d-flex justify-content-between align-items-start gap-2 mb-0">
+                        <div>
+                            <strong>
+                                <span class="badge bg-success">Activa</span>
+                                Balance de líquidos en curso
+                            </strong>
+                            <div class="mt-1 small">
+                                Iniciado el {{ $activeFluidBalanceOrder->start_date->format('d/m/Y') }}
+                                por Dr(a). {{ $activeFluidBalanceOrder->prescribedBy?->fullName() ?? '—' }}.
+                            </div>
+                            @if($activeFluidBalanceOrder->clinical_reason)
+                                <div class="mt-2 small"><strong>Motivo clínico:</strong> {{ $activeFluidBalanceOrder->clinical_reason }}</div>
+                            @endif
+                            <div class="mt-1 small text-muted">
+                                Capturada por {{ $activeFluidBalanceOrder->createdBy?->fullName() ?? '—' }}
+                                el {{ $activeFluidBalanceOrder->created_at->format('d/m/Y H:i') }}.
+                            </div>
+                        </div>
+                        @if($activeFluidBalanceOrder->canBeModifiedBy($user))
+                            <a href="{{ route('fluidBalanceOrders.suspendForm', $activeFluidBalanceOrder) }}"
+                               class="btn btn-sm btn-outline-warning text-nowrap">
+                                <i class="bi bi-pause-circle me-1"></i>Suspender
+                            </a>
+                        @endif
+                    </div>
+
+                    {{-- Captura hora por hora del balance (Fase 8.B) --}}
+                    <div class="mt-3">
+                        <a href="{{ route('fluidBalanceCaptures.index', $activeFluidBalanceOrder) }}" class="btn btn-primary">
+                            <i class="bi bi-droplet me-1"></i>Registrar balance
+                        </a>
+                    </div>
+                @else
+                    <p class="text-muted mb-0">
+                        El paciente no tiene actualmente una orden de balance de líquidos activa.
+                    </p>
+                @endif
+
+                {{-- Histórico de órdenes anteriores --}}
+                @if($pastFluidBalanceOrders->isNotEmpty())
+                    <hr>
+                    <div class="accordion accordion-flush" id="pastBalanceOrders">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#pastBalanceOrdersCollapse">
+                                    <i class="bi bi-clock-history me-2"></i>Historial de órdenes anteriores ({{ $pastFluidBalanceOrders->count() }})
+                                </button>
+                            </h2>
+                            <div id="pastBalanceOrdersCollapse" class="accordion-collapse collapse" data-bs-parent="#pastBalanceOrders">
+                                <div class="accordion-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm align-middle mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Inicio</th>
+                                                    <th>Cierre</th>
+                                                    <th>Motivo del cierre</th>
+                                                    <th>Prescrita por</th>
+                                                    <th>Estado</th>
+                                                    <th></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($pastFluidBalanceOrders as $o)
+                                                    <tr>
+                                                        <td class="text-nowrap small">{{ $o->start_date->format('d/m/Y') }}</td>
+                                                        <td class="text-nowrap small">{{ $o->suspended_at?->format('d/m/Y H:i') }}</td>
+                                                        <td class="small">{{ $o->suspension_reason }}</td>
+                                                        <td class="text-muted small">Dr(a). {{ $o->prescribedBy?->fullName() ?? '—' }}</td>
+                                                        <td><span class="badge {{ $o->statusBadgeClass() }}">{{ $o->statusLabel() }}</span></td>
+                                                        <td class="text-end">
+                                                            @if($o->days()->exists())
+                                                                <a href="{{ route('fluidBalanceCaptures.index', $o) }}" class="btn btn-sm btn-outline-primary text-nowrap">
+                                                                    <i class="bi bi-droplet me-1"></i>Ver registros
+                                                                </a>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        {{-- Espacio reservado para futuras "otras indicaciones" --}}
+        <p class="text-muted text-center mt-4">
+            <i class="bi bi-info-circle me-1"></i>
+            Próximamente se agregarán más tipos de indicaciones médicas en esta sección.
+        </p>
+
+    </div>{{-- /tab other-indications --}}
+
+    </div>{{-- /tab-content --}}
 
 </div>{{-- /container --}}
 @endsection

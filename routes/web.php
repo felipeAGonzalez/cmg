@@ -1,12 +1,15 @@
 <?php
 
 use App\Http\Controllers\DoctorController;
+use App\Http\Controllers\FluidBalanceCaptureController;
+use App\Http\Controllers\FluidBalanceOrderController;
 use App\Http\Controllers\FrontSheetController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MedicationAdministrationController;
 use App\Http\Controllers\MedicationOrderController;
 use App\Http\Controllers\NursingEntryController;
 use App\Http\Controllers\NursingSheetController;
+use App\Http\Controllers\NursingSheetPdfController;
 use App\Http\Controllers\PasswordChangeController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\RoomController;
@@ -93,6 +96,27 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
             Route::post('/medication-orders/{medicationOrder}/suspend', [MedicationOrderController::class, 'suspend'])->name('medicationOrders.suspend');
         });
 
+        // ─── Órdenes de balance de líquidos (admin + doctor + nurse) ─────────
+        // La validación fina de permisos se hace en el controlador.
+        Route::middleware('role:admin,doctor,nurse')->group(function () {
+            Route::get('/stays/{stay}/fluid-balance-orders/create', [FluidBalanceOrderController::class, 'create'])->name('fluidBalanceOrders.create');
+            Route::post('/stays/{stay}/fluid-balance-orders', [FluidBalanceOrderController::class, 'store'])->name('fluidBalanceOrders.store');
+            Route::get('/fluid-balance-orders/{fluidBalanceOrder}/suspend', [FluidBalanceOrderController::class, 'suspendForm'])->name('fluidBalanceOrders.suspendForm');
+            Route::post('/fluid-balance-orders/{fluidBalanceOrder}/suspend', [FluidBalanceOrderController::class, 'suspend'])->name('fluidBalanceOrders.suspend');
+        });
+
+        // ─── Captura del balance de líquidos hora por hora ───────────────────
+        // Consulta: admin + nurse + médicos asignados (validación en controlador).
+        Route::middleware('role:admin,doctor,nurse')->group(function () {
+            Route::get('/fluid-balance-orders/{fluidBalanceOrder}/captures', [FluidBalanceCaptureController::class, 'index'])->name('fluidBalanceCaptures.index');
+        });
+        // Captura/edición/eliminación de tomas: solo admin + nurse.
+        Route::middleware('role:admin,nurse')->group(function () {
+            Route::post('/fluid-balance-orders/{fluidBalanceOrder}/entries', [FluidBalanceCaptureController::class, 'store'])->name('fluidBalanceCaptures.store');
+            Route::put('/fluid-balance-entries/{fluidBalanceEntry}', [FluidBalanceCaptureController::class, 'update'])->name('fluidBalanceCaptures.update');
+            Route::delete('/fluid-balance-entries/{fluidBalanceEntry}', [FluidBalanceCaptureController::class, 'destroy'])->name('fluidBalanceCaptures.destroy');
+        });
+
         // ─── Administraciones de medicamentos ────────────────────────────────
         // Consulta: admin + nurse + médicos asignados (validación en controlador).
         Route::middleware('role:admin,doctor,nurse')->group(function () {
@@ -124,6 +148,11 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
         // ─── Hoja Frontal PDF (admin + nurse + médicos asignados) ────────────
         Route::middleware('role:admin,nurse,doctor')->group(function () {
             Route::get('/stays/{stay}/front-sheet/pdf', [FrontSheetController::class, 'pdf'])->name('frontSheet.pdf');
+        });
+
+        // ─── PDF compilado de Hojas de Enfermería (admin + nurse + médicos asignados) ─
+        Route::middleware('role:admin,nurse,doctor')->group(function () {
+            Route::get('/stays/{stay}/nursing-sheets/pdf', [NursingSheetPdfController::class, 'show'])->name('nursingSheets.pdf');
         });
 
         // ─── Traslado de cuartos (solo nurse) ───────────────────────────────
