@@ -40,7 +40,7 @@ class DoctorController extends Controller
         $stay->load([
             'patient',
             'room',
-            'currentDoctors.doctor',
+            'currentDoctors.doctor.specialties',
             'stayDoctors.doctor',
             'roomTransfers.fromRoom',
             'roomTransfers.toRoom',
@@ -62,14 +62,14 @@ class DoctorController extends Controller
         $isAssigned = $stay->currentDoctors()->where('doctor_id', $doctor->id)->exists();
 
         if (! $isAssigned) {
-            abort(403, 'Solo puedes escribir instrucciones para pacientes asignados a ti.');
+            abort(403, 'Solo puedes escribir indicaciones para pacientes asignados a ti.');
         }
 
         $request->validate([
             'body' => 'required|string|max:3000',
         ], [
-            'body.required' => 'La instrucción no puede estar vacía.',
-            'body.max'      => 'La instrucción no puede superar 3,000 caracteres.',
+            'body.required' => 'La indicación no puede estar vacía.',
+            'body.max'      => 'La indicación no puede superar 3,000 caracteres.',
         ]);
 
         StayInstruction::create([
@@ -78,6 +78,6 @@ class DoctorController extends Controller
             'body'      => $request->body,
         ]);
 
-        return back()->with('success', 'Instrucción registrada correctamente.');
+        return back()->with('success', 'Indicación registrada correctamente.');
     }
 }

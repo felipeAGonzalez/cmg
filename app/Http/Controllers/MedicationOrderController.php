@@ -47,6 +47,18 @@ class MedicationOrderController extends Controller
             ->orderByDesc('suspended_at')
             ->get();
 
+        // Órdenes de monitoreo de glucemia (tab "Otras prescripciones").
+        $activeGlucoseOrder = $stay->glucoseMonitoringOrders()
+            ->whereNull('suspended_at')
+            ->with(['prescribedBy', 'createdBy'])
+            ->first();
+
+        $pastGlucoseOrders = $stay->glucoseMonitoringOrders()
+            ->whereNotNull('suspended_at')
+            ->with(['prescribedBy', 'suspendedBy'])
+            ->orderByDesc('suspended_at')
+            ->get();
+
         return view('medication-orders.index', [
             'stay'                    => $stay,
             'orders'                  => $orders,
@@ -55,6 +67,8 @@ class MedicationOrderController extends Controller
             'finishedOrders'          => $grouped[MedicationOrder::STATUS_FINISHED] ?? collect(),
             'activeFluidBalanceOrder' => $activeFluidBalanceOrder,
             'pastFluidBalanceOrders'  => $pastFluidBalanceOrders,
+            'activeGlucoseOrder'      => $activeGlucoseOrder,
+            'pastGlucoseOrders'       => $pastGlucoseOrders,
         ]);
     }
 

@@ -31,7 +31,7 @@ class NursingSheetPdfController extends Controller
         $stay->load([
             'patient',
             'room',
-            'currentDoctors.doctor',
+            'currentDoctors.doctor.specialties',
             'vitalSignReadings.recordedBy',
             'shiftSummaries.recordedBy',
             'medicationOrders' => function ($q) {
@@ -43,6 +43,8 @@ class NursingSheetPdfController extends Controller
                 $q->with(['prescribedBy', 'createdBy', 'suspendedBy', 'days.entries.recordedBy'])
                     ->orderBy('start_date');
             },
+            'glucoseMonitoringOrders',
+            'glucoseReadings',
         ]);
 
         // Signos vitales: lista cronológica única (sin agrupar por día calendario).

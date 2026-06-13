@@ -16,7 +16,7 @@
     <div class="card border-0 shadow-sm mb-3">
         <div class="card-body d-flex flex-wrap justify-content-between align-items-start gap-2">
             <div>
-                <h4 class="fw-bold mb-1"><i class="bi bi-prescription2 text-primary me-2"></i>Indicaciones del paciente</h4>
+                <h4 class="fw-bold mb-1"><i class="bi bi-prescription2 text-primary me-2"></i>Prescripciones del paciente</h4>
                 <div>
                     <span class="fw-semibold">{{ $stay->patient->fullName() }}</span>
                     <span class="text-muted">· {{ $stay->patient->age() }} años · Cuarto {{ $stay->room->number }}</span>
@@ -34,7 +34,10 @@
     @if(session('success'))<div class="alert alert-success border-0 shadow-sm">{{ session('success') }}</div>@endif
     @if(session('error'))<div class="alert alert-danger border-0 shadow-sm">{{ session('error') }}</div>@endif
 
-    @php $otherCount = ($activeFluidBalanceOrder ? 1 : 0) + $pastFluidBalanceOrders->count(); @endphp
+    @php
+        $otherCount = ($activeFluidBalanceOrder ? 1 : 0) + $pastFluidBalanceOrders->count()
+            + ($activeGlucoseOrder ? 1 : 0) + $pastGlucoseOrders->count();
+    @endphp
 
     {{-- ════════ SUB-TABS INTERNAS ════════ --}}
     <ul class="nav nav-pills mb-4" id="indicationsTabs" role="tablist">
@@ -46,7 +49,7 @@
         </li>
         <li class="nav-item">
             <button class="nav-link" data-bs-toggle="pill" data-bs-target="#other-indications-tab" type="button">
-                <i class="bi bi-clipboard2-pulse me-1"></i>Otras indicaciones
+                <i class="bi bi-clipboard2-pulse me-1"></i>Otras prescripciones
                 <span class="badge bg-light text-dark ms-1">{{ $otherCount }}</span>
             </button>
         </li>
@@ -362,10 +365,112 @@
             </div>
         </div>
 
-        {{-- Espacio reservado para futuras "otras indicaciones" --}}
+        {{-- ──── Monitoreo de glucemia capilar ──── --}}
+        @php
+            $canStartGlucose = $stay->isActive() && (
+                $user->isAdmin()
+                || ($user->isDoctor() && $stay->currentDoctors->where('doctor_id', $user->id)->count() > 0)
+                || ($user->isNurse() && $stay->currentDoctors->count() > 0)
+            );
+        @endphp
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold text-primary mb-0"><i class="bi bi-droplet me-1"></i>Monitoreo de glucemia capilar</h6>
+                @if(! $activeGlucoseOrder && $canStartGlucose)
+                    <a href="{{ route('glucoseMonitoringOrders.create', $stay) }}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i>Iniciar monitoreo
+                    </a>
+                @endif
+            </div>
+            <div class="card-body">
+                @if($activeGlucoseOrder)
+                    <div class="alert alert-success border-0 d-flex justify-content-between align-items-start gap-2 mb-0">
+                        <div>
+                            <strong>
+                                <span class="badge bg-success">Activa</span>
+                                Monitoreo de glucemia en curso
+                            </strong>
+                            <div class="mt-1 small">
+                                Iniciado el {{ $activeGlucoseOrder->start_date->format('d/m/Y') }}
+                                por Dr(a). {{ $activeGlucoseOrder->prescribedBy?->fullName() ?? '—' }}.
+                            </div>
+                            @if($activeGlucoseOrder->schedule_description)
+                                <div class="mt-2 small"><strong>Esquema:</strong> {{ $activeGlucoseOrder->schedule_description }}</div>
+                            @endif
+                            @if($activeGlucoseOrder->clinical_reason)
+                                <div class="mt-1 small"><strong>Motivo clínico:</strong> {{ $activeGlucoseOrder->clinical_reason }}</div>
+                            @endif
+                            <div class="mt-1 small text-muted">
+                                Capturada por {{ $activeGlucoseOrder->createdBy?->fullName() ?? '—' }}
+                                el {{ $activeGlucoseOrder->created_at->format('d/m/Y H:i') }}.
+                            </div>
+                            <div class="mt-2 small text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Las enfermeras verán un campo de glucemia capilar al registrar signos vitales.
+                            </div>
+                        </div>
+                        @if($activeGlucoseOrder->canBeModifiedBy($user))
+                            <a href="{{ route('glucoseMonitoringOrders.suspendForm', $activeGlucoseOrder) }}"
+                               class="btn btn-sm btn-outline-warning text-nowrap">
+                                <i class="bi bi-pause-circle me-1"></i>Suspender
+                            </a>
+                        @endif
+                    </div>
+                @else
+                    <p class="text-muted mb-0">
+                        El paciente no tiene actualmente una orden de monitoreo de glucemia activa.
+                    </p>
+                @endif
+
+                {{-- Histórico de órdenes anteriores --}}
+                @if($pastGlucoseOrders->isNotEmpty())
+                    <hr>
+                    <div class="accordion accordion-flush" id="pastGlucoseOrders">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#pastGlucoseOrdersCollapse">
+                                    <i class="bi bi-clock-history me-2"></i>Historial de órdenes anteriores ({{ $pastGlucoseOrders->count() }})
+                                </button>
+                            </h2>
+                            <div id="pastGlucoseOrdersCollapse" class="accordion-collapse collapse" data-bs-parent="#pastGlucoseOrders">
+                                <div class="accordion-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm align-middle mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Inicio</th>
+                                                    <th>Cierre</th>
+                                                    <th>Motivo del cierre</th>
+                                                    <th>Prescrita por</th>
+                                                    <th>Estado</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($pastGlucoseOrders as $o)
+                                                    <tr>
+                                                        <td class="text-nowrap small">{{ $o->start_date->format('d/m/Y') }}</td>
+                                                        <td class="text-nowrap small">{{ $o->suspended_at?->format('d/m/Y H:i') }}</td>
+                                                        <td class="small">{{ $o->suspension_reason }}</td>
+                                                        <td class="text-muted small">Dr(a). {{ $o->prescribedBy?->fullName() ?? '—' }}</td>
+                                                        <td><span class="badge {{ $o->statusBadgeClass() }}">{{ $o->statusLabel() }}</span></td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        {{-- Espacio reservado para futuras "otras prescripciones" --}}
         <p class="text-muted text-center mt-4">
             <i class="bi bi-info-circle me-1"></i>
-            Próximamente se agregarán más tipos de indicaciones médicas en esta sección.
+            Próximamente se agregarán más tipos de prescripciones médicas en esta sección.
         </p>
 
     </div>{{-- /tab other-indications --}}

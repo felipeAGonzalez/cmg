@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\DoctorSpecialty;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Models\Specialty;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -32,9 +32,9 @@ class UserController extends Controller
 
     public function create(): View
     {
-        $specialties = DoctorSpecialty::labels();
+        $availableSpecialties = Specialty::active()->orderBy('name')->get();
 
-        return view('users.create', compact('specialties'));
+        return view('users.create', compact('availableSpecialties'));
     }
 
     public function store(StoreUserRequest $request): RedirectResponse
@@ -42,11 +42,12 @@ class UserController extends Controller
         $data = $request->validated();
         $data['password'] = Hash::make($data['password']);
 
-        if ($data['role'] !== 'doctor') {
-            $data['specialty'] = null;
-        }
+        $specialtyIds = $data['specialty_ids'] ?? [];
+        unset($data['specialty_ids']);
 
-        User::create($data);
+        $user = User::create($data);
+
+        $user->specialties()->sync($user->isDoctor() ? $specialtyIds : []);
 
         return redirect()->route('users.index')
             ->with('success', 'Usuario creado correctamente.');
@@ -54,9 +55,10 @@ class UserController extends Controller
 
     public function edit(User $user): View
     {
-        $specialties = DoctorSpecialty::labels();
+        $availableSpecialties = Specialty::active()->orderBy('name')->get();
+        $userSpecialtyIds = $user->specialties->pluck('id')->toArray();
 
-        return view('users.edit', compact('user', 'specialties'));
+        return view('users.edit', compact('user', 'availableSpecialties', 'userSpecialtyIds'));
     }
 
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
@@ -69,11 +71,13 @@ class UserController extends Controller
             $data['password'] = Hash::make($data['password']);
         }
 
-        if ($data['role'] !== 'doctor') {
-            $data['specialty'] = null;
-        }
+        $specialtyIds = $data['specialty_ids'] ?? [];
+        unset($data['specialty_ids']);
 
         $user->update($data);
+
+        // Solo los médicos conservan especialidades; al cambiar de rol se limpian.
+        $user->specialties()->sync($user->isDoctor() ? $specialtyIds : []);
 
         return redirect()->route('users.index')
             ->with('success', 'Usuario actualizado correctamente.');

@@ -118,6 +118,22 @@ class Stay extends Model
         return $this->fluidBalanceOrders()->whereNull('suspended_at')->first();
     }
 
+    public function glucoseMonitoringOrders(): HasMany
+    {
+        return $this->hasMany(GlucoseMonitoringOrder::class);
+    }
+
+    public function glucoseReadings(): HasMany
+    {
+        return $this->hasMany(GlucoseReading::class);
+    }
+
+    /** La orden de monitoreo de glucemia activa (única), o null. */
+    public function activeGlucoseMonitoringOrder(): ?GlucoseMonitoringOrder
+    {
+        return $this->glucoseMonitoringOrders()->whereNull('suspended_at')->first();
+    }
+
     /**
      * Documentos de la estancia ordenados por el orden de despliegue del catálogo.
      */

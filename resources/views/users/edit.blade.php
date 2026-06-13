@@ -102,21 +102,29 @@
                     @enderror
                 </div>
 
-                <div class="col-md-6" id="specialtyWrapper" style="display:none;">
-                    <label for="specialty" class="form-label fw-semibold">Especialidad</label>
-                    <select id="specialty" name="specialty"
-                            class="form-select @error('specialty') is-invalid @enderror">
-                        <option value="">— Selecciona especialidad —</option>
-                        @foreach($specialties as $value => $label)
-                        <option value="{{ $value }}"
-                                {{ old('specialty', $user->specialty) === $value ? 'selected' : '' }}>
-                            {{ $label }}
-                        </option>
-                        @endforeach
-                    </select>
-                    @error('specialty')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
+                <div class="col-12" id="specialtyWrapper" style="display:none;">
+                    <label class="form-label fw-semibold">Especialidades</label>
+                    <div class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                        @forelse($availableSpecialties as $specialty)
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                       name="specialty_ids[]"
+                                       value="{{ $specialty->id }}"
+                                       id="specialty-{{ $specialty->id }}"
+                                       {{ in_array($specialty->id, old('specialty_ids', $userSpecialtyIds)) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="specialty-{{ $specialty->id }}">
+                                    {{ $specialty->name }}
+                                </label>
+                            </div>
+                        @empty
+                            <p class="text-muted small mb-0">
+                                No hay especialidades activas. Crea una en la sección Especialidades.
+                            </p>
+                        @endforelse
+                    </div>
+                    <small class="text-muted">
+                        Selecciona una o más especialidades. Solo aplica a usuarios con rol Médico.
+                    </small>
                 </div>
             </div>
 
@@ -136,13 +144,12 @@
 function toggleSpecialty() {
     const role    = document.getElementById('role').value;
     const wrapper = document.getElementById('specialtyWrapper');
-    const select  = document.getElementById('specialty');
 
     if (role === 'doctor') {
         wrapper.style.display = 'block';
     } else {
         wrapper.style.display = 'none';
-        select.value = '';
+        wrapper.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
     }
 }
 toggleSpecialty();

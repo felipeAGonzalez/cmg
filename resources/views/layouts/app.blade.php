@@ -73,6 +73,12 @@
                         <i class="bi bi-person-gear me-1"></i>Usuarios
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('specialties.*') ? 'active fw-semibold' : '' }}"
+                       href="{{ route('specialties.index') }}">
+                        <i class="bi bi-mortarboard me-1"></i>Especialidades
+                    </a>
+                </li>
                 @endif
 
                 @if(Auth::user()->isDoctor())

@@ -91,7 +91,7 @@
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#indications" type="button" role="tab">
-                <i class="bi bi-prescription2 me-1"></i>Indicaciones
+                <i class="bi bi-prescription2 me-1"></i>Prescripciones
             </button>
         </li>
         <li class="nav-item" role="presentation">
@@ -138,7 +138,7 @@
                             @foreach($stay->currentDoctors as $sd)
                             <tr>
                                 <td>{{ $sd->doctor->fullName() }}</td>
-                                <td>{{ \App\Enums\DoctorSpecialty::from($sd->specialty)->label() }}</td>
+                                <td>{{ $sd->doctor->specialtiesLabel() ?? '—' }}</td>
                                 <td>{{ $sd->assigned_at->format('d/m/Y H:i') }}</td>
                                 @if($user->isAdmin())
                                 <td class="text-end">
@@ -156,27 +156,27 @@
                 </div>
             @endif
 
-            {{-- Instrucciones médicas (se mantiene la funcionalidad del avance anterior) --}}
+            {{-- Indicaciones médicas (se mantiene la funcionalidad del avance anterior) --}}
             <div class="mt-4">
                 <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
                     <h6 class="fw-bold text-primary mb-0">
-                        <i class="bi bi-pencil-square me-1"></i>Instrucciones médicas
+                        <i class="bi bi-pencil-square me-1"></i>Indicaciones médicas
                     </h6>
                     @if($user->isNurse() || $user->isAdmin())
                         @if($stay->currentDoctors->isNotEmpty())
                         <button type="button" class="btn btn-outline-primary btn-sm" id="btnEscribirInstruccion">
-                            <i class="bi bi-plus-circle me-1"></i>Escribir instrucción
+                            <i class="bi bi-plus-circle me-1"></i>Escribir indicación
                         </button>
                         @else
                         <span class="text-muted small fst-italic">
-                            <i class="bi bi-info-circle me-1"></i>Asigna un médico para poder registrar instrucciones
+                            <i class="bi bi-info-circle me-1"></i>Asigna un médico para poder registrar indicaciones
                         </span>
                         @endif
                     @endif
                 </div>
 
                 @if($stay->instructions->isEmpty())
-                    <p class="text-muted fst-italic mb-0">No hay instrucciones registradas para esta estancia.</p>
+                    <p class="text-muted fst-italic mb-0">No hay indicaciones registradas para esta estancia.</p>
                 @else
                     <div class="d-flex flex-column gap-3">
                         @foreach($stay->instructions as $instruction)
@@ -241,10 +241,10 @@
             </div>
         </div>
 
-        {{-- ────────── TAB: Indicaciones ────────── --}}
+        {{-- ────────── TAB: Prescripciones ────────── --}}
         <div class="tab-pane fade" id="indications" role="tabpanel">
             <h6 class="fw-bold text-primary mb-3 border-bottom pb-2">
-                <i class="bi bi-prescription2 me-1"></i>Indicaciones — Prescripciones
+                <i class="bi bi-prescription2 me-1"></i>Prescripciones
             </h6>
 
             @php
@@ -304,7 +304,7 @@
 
             <div class="d-flex gap-2">
                 <a href="{{ route('medicationOrders.index', $stay) }}" class="btn btn-primary">
-                    <i class="bi bi-box-arrow-up-right me-1"></i>Abrir Indicaciones del paciente
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Abrir Prescripciones del paciente
                 </a>
                 @if($canPrescribe && $stay->isActive())
                     <a href="{{ route('medicationOrders.create', $stay) }}" class="btn btn-outline-primary">
@@ -370,9 +370,13 @@
                                 </td>
                                 @if(! $user->isDoctor())
                                 @php
-                                    $isFrontSheet    = $doc->code === 'front_sheet';
-                                    $isNursingSheets = $doc->code === 'nursing_sheets';
-                                    $isCompleted     = $sd->status === \App\Models\StayDocument::STATUS_COMPLETED;
+                                    $isFrontSheet        = $doc->code === 'front_sheet';
+                                    $isNursingSheets     = $doc->code === 'nursing_sheets';
+                                    $isAdmissionNote     = $doc->code === 'admission_note';
+                                    $isAuthorizedConsent = $doc->code === 'authorized_consent';
+                                    $isAnesthesiaConsent = $doc->code === 'anesthesia_consent';
+                                    $isCompleted         = $sd->status === \App\Models\StayDocument::STATUS_COMPLETED;
+                                    $stayActive          = $stay->discharge_date === null;
                                 @endphp
                                 <td class="text-end text-nowrap">
                                     {{-- Llenar --}}
@@ -384,6 +388,28 @@
                                         <a href="{{ route('nursingSheets.index', $stay) }}" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-pencil"></i> Llenar
                                         </a>
+                                    @elseif($isAdmissionNote)
+                                        {{-- La Nota de Ingreso se alimenta de las indicaciones médicas; no tiene formulario propio. --}}
+                                    @elseif($isAuthorizedConsent)
+                                        @if($stayActive)
+                                            <a href="{{ route('authorizedConsent.edit', $stay) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-pencil"></i> Llenar
+                                            </a>
+                                        @else
+                                            <button type="button" class="btn btn-sm btn-outline-primary" disabled title="Estancia dada de alta">
+                                                <i class="bi bi-pencil"></i> Llenar
+                                            </button>
+                                        @endif
+                                    @elseif($isAnesthesiaConsent)
+                                        @if($stayActive)
+                                            <a href="{{ route('anesthesiaConsent.edit', $stay) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-pencil"></i> Llenar
+                                            </a>
+                                        @else
+                                            <button type="button" class="btn btn-sm btn-outline-primary" disabled title="Estancia dada de alta">
+                                                <i class="bi bi-pencil"></i> Llenar
+                                            </button>
+                                        @endif
                                     @else
                                         <button type="button" class="btn btn-sm btn-outline-primary" disabled
                                                 title="{{ $blockedUntilDischarge ? 'Disponible al dar de alta' : 'Próximamente' }}">
@@ -400,9 +426,21 @@
                                         <a href="{{ route('nursingSheets.pdf', $stay) }}" target="_blank" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-eye"></i> Ver
                                         </a>
+                                    @elseif($isAdmissionNote)
+                                        <a href="{{ route('admissionNote.pdf', $stay) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> Ver
+                                        </a>
+                                    @elseif($isAuthorizedConsent && $isCompleted)
+                                        <a href="{{ route('authorizedConsent.pdf', $stay) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> Ver
+                                        </a>
+                                    @elseif($isAnesthesiaConsent && $isCompleted)
+                                        <a href="{{ route('anesthesiaConsent.pdf', $stay) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> Ver
+                                        </a>
                                     @else
                                         <button type="button" class="btn btn-sm btn-outline-primary" disabled
-                                                title="{{ $isFrontSheet ? 'Llena el documento primero' : 'Próximamente' }}">
+                                                title="{{ ($isAuthorizedConsent || $isAnesthesiaConsent) ? 'Llena el documento primero' : ($isFrontSheet ? 'Llena el documento primero' : 'Próximamente') }}">
                                             <i class="bi bi-eye"></i> Ver
                                         </button>
                                     @endif
@@ -627,7 +665,7 @@
     </div>
     @endif
 
-    {{-- Modal: Escribir instrucción (admin + nurse en nombre de médico asignado) --}}
+    {{-- Modal: Escribir indicación (admin + nurse en nombre de médico asignado) --}}
     @if(($user->isNurse() || $user->isAdmin()) && $stay->currentDoctors->isNotEmpty())
     <div class="modal fade" id="instruccionNurseModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -636,14 +674,14 @@
                     @csrf
                     <div class="modal-header border-0">
                         <h5 class="modal-title fw-bold">
-                            <i class="bi bi-pencil-square me-1"></i>Registrar instrucción médica
+                            <i class="bi bi-pencil-square me-1"></i>Registrar indicación médica
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                     </div>
                     <div class="modal-body">
                         <div class="mb-3">
                             <label for="nurse_doctor_id" class="form-label fw-semibold">
-                                Médico que dicta la instrucción <span class="text-danger">*</span>
+                                Médico que dicta la indicación <span class="text-danger">*</span>
                             </label>
                             <select id="nurse_doctor_id" name="doctor_id"
                                     class="form-select @error('doctor_id') is-invalid @enderror" required>
@@ -658,12 +696,12 @@
                         </div>
                         <div class="mb-1">
                             <label for="nurse_instruccion_body" class="form-label fw-semibold">
-                                Instrucción <span class="text-danger">*</span>
+                                Indicación <span class="text-danger">*</span>
                             </label>
                             <textarea id="nurse_instruccion_body" name="body"
                                       class="form-control @error('body') is-invalid @enderror"
                                       rows="6" maxlength="3000"
-                                      placeholder="Escribe aquí la instrucción dictada por el médico..."
+                                      placeholder="Escribe aquí la indicación dictada por el médico..."
                                       required>{{ old('body') }}</textarea>
                             @error('body')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             <div class="form-text text-end"><span id="nurseCharCount">0</span> / 3,000 caracteres</div>
@@ -672,7 +710,7 @@
                     <div class="modal-footer border-0">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-floppy me-1"></i>Guardar instrucción
+                            <i class="bi bi-floppy me-1"></i>Guardar indicación
                         </button>
                     </div>
                 </form>

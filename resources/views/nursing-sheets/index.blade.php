@@ -334,7 +334,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    @include('nursing-sheets.partials.vitals-fields', ['prefix' => 'edit_'])
+                    @include('nursing-sheets.partials.vitals-fields', ['prefix' => 'edit_', 'showTime' => false])
                     <div class="form-text">Captura al menos un signo vital.</div>
                 </div>
                 <div class="modal-footer border-0">

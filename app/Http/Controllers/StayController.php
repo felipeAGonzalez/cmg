@@ -83,7 +83,7 @@ class StayController extends Controller
         $stay->load([
             'patient',
             'room',
-            'currentDoctors.doctor',
+            'currentDoctors.doctor.specialties',
             'roomTransfers.fromRoom',
             'roomTransfers.toRoom',
             'roomTransfers.transferredBy',
@@ -183,11 +183,19 @@ class StayController extends Controller
             'suspension_reason' => \App\Models\FluidBalanceOrder::DISCHARGE_REASON,
         ]);
 
-        // El documento de Hojas de Enfermería queda completo al egresar el paciente.
-        $nursingSheetsDocument = \App\Models\Document::where('code', 'nursing_sheets')->first();
-        if ($nursingSheetsDocument) {
+        // Igual para la orden de monitoreo de glucemia activa (si existe).
+        $stay->glucoseMonitoringOrders()->whereNull('suspended_at')->update([
+            'suspended_at'      => now(),
+            'suspended_by_id'   => auth()->id(),
+            'suspension_reason' => \App\Models\GlucoseMonitoringOrder::DISCHARGE_REASON,
+        ]);
+
+        // Las Hojas de Enfermería y la Nota de Ingreso quedan completas al egresar.
+        $autoCompletedCodes = ['nursing_sheets', 'admission_note'];
+        $autoCompletedDocumentIds = \App\Models\Document::whereIn('code', $autoCompletedCodes)->pluck('id');
+        if ($autoCompletedDocumentIds->isNotEmpty()) {
             \App\Models\StayDocument::where('stay_id', $stay->id)
-                ->where('document_id', $nursingSheetsDocument->id)
+                ->whereIn('document_id', $autoCompletedDocumentIds)
                 ->update([
                     'status'       => \App\Models\StayDocument::STATUS_COMPLETED,
                     'completed_at' => now(),
@@ -201,7 +209,7 @@ class StayController extends Controller
     public function storeInstruction(Request $request, Stay $stay): RedirectResponse
     {
         if (! $stay->isActive()) {
-            return back()->with('error', 'No se pueden agregar instrucciones a una estancia finalizada.');
+            return back()->with('error', 'No se pueden agregar indicaciones a una estancia finalizada.');
         }
 
         $assignedDoctorIds = $stay->currentDoctors()->pluck('doctor_id');
@@ -214,10 +222,10 @@ class StayController extends Controller
             'doctor_id' => ['required', 'integer', Rule::in($assignedDoctorIds)],
             'body'      => 'required|string|max:3000',
         ], [
-            'doctor_id.required' => 'Debes seleccionar el médico que dicta la instrucción.',
+            'doctor_id.required' => 'Debes seleccionar el médico que dicta la indicación.',
             'doctor_id.in'       => 'El médico seleccionado no está asignado a esta estancia.',
-            'body.required'      => 'La instrucción no puede estar vacía.',
-            'body.max'           => 'La instrucción no puede superar 3,000 caracteres.',
+            'body.required'      => 'La indicación no puede estar vacía.',
+            'body.max'           => 'La indicación no puede superar 3,000 caracteres.',
         ]);
 
         StayInstruction::create([
@@ -226,6 +234,6 @@ class StayController extends Controller
             'body'      => $request->body,
         ]);
 
-        return back()->with('success', 'Instrucción registrada correctamente.');
+        return back()->with('success', 'Indicación registrada correctamente.');
     }
 }

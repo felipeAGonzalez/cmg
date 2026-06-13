@@ -1,5 +1,9 @@
 @php
     use App\Support\Shift;
+
+    $hasGlucoseOrders = $stay->glucoseMonitoringOrders->isNotEmpty();
+    $glucoseReadingsByTimestamp = $stay->glucoseReadings
+        ->keyBy(fn ($g) => $g->recorded_at->format('Y-m-d H:i:s'));
 @endphp
 
 <div class="chapter-title">Hoja 1 — Registros clínicos y signos vitales</div>
@@ -21,12 +25,14 @@
                     <th class="center" style="width:58px;">T.A.</th>
                     <th class="center" style="width:42px;">F.R.</th>
                     <th class="center" style="width:48px;">Temp.</th>
+                    @if($hasGlucoseOrders)<th class="center" style="width:42px;">Gluc.</th>@endif
                     <th>Notas</th>
                     <th style="width:110px;">Enfermera</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($vitalSignReadings as $r)
+                    @php $glucose = $glucoseReadingsByTimestamp[$r->recorded_at->format('Y-m-d H:i:s')] ?? null; @endphp
                     <tr>
                         <td class="center">{{ $r->recorded_at->format('d/m/Y') }}</td>
                         <td class="center">{{ $r->recorded_at->format('H:i') }}</td>
@@ -34,6 +40,7 @@
                         <td class="center">{{ $r->bloodPressureFormatted() ?? '—' }}</td>
                         <td class="center">{{ $r->respiratory_rate ?? '—' }}</td>
                         <td class="center">{{ $r->temperature ? rtrim(rtrim(number_format($r->temperature, 1), '0'), '.') . '°' : '—' }}</td>
+                        @if($hasGlucoseOrders)<td class="center">{{ $glucose?->value_mg_dl ?? '—' }}</td>@endif
                         <td>{{ $r->notes ?: '—' }}</td>
                         <td>{{ $r->recordedBy?->fullName() ?? '—' }}</td>
                     </tr>

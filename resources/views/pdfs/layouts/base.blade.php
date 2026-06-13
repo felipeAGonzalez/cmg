@@ -60,8 +60,13 @@
             color: #777;
         }
 
-        footer .left  { float: left; }
-        footer .right { float: right; }
+        /* NO usar float aquí: en DomPDF los float del footer fijo se filtran al
+           flujo del <main> y empujan las líneas de texto a la mitad derecha de
+           la página. Se usa una tabla para alinear izquierda/derecha. */
+        footer table { width: 100%; border-collapse: collapse; }
+        footer td { border: none; padding: 0; }
+        footer td.left  { text-align: left; }
+        footer td.right { text-align: right; }
 
         .doc-title {
             text-align: center;
@@ -131,10 +136,14 @@
     </header>
 
     <footer>
-        <div class="left">
-            Centro Médico Guadalupano — Documento generado el {{ now()->format('d/m/Y H:i') }}
-        </div>
-        <div class="right">Expediente clínico electrónico</div>
+        <table>
+            <tr>
+                <td class="left">
+                    Centro Médico Guadalupano — Documento generado el {{ now()->format('d/m/Y H:i') }}
+                </td>
+                <td class="right">Expediente clínico electrónico</td>
+            </tr>
+        </table>
     </footer>
 
     <script type="text/php">

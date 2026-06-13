@@ -28,12 +28,12 @@ class VitalSignsChartGenerator
             return null;
         }
 
-        $width = 1000;
-        $height = 400;
-        $marginLeft = 70;
-        $marginRight = 40;
-        $marginTop = 50;
-        $marginBottom = 60;
+        $width = 1200;
+        $height = 480;
+        $marginLeft = 95;
+        $marginRight = 45;
+        $marginTop = 60;
+        $marginBottom = 70;
         $chartWidth = $width - $marginLeft - $marginRight;
         $chartHeight = $height - $marginTop - $marginBottom;
 
@@ -51,7 +51,6 @@ class VitalSignsChartGenerator
         $textMuted  = imagecolorallocate($image, 102, 102, 102);
         $colorHr    = imagecolorallocate($image, 211, 47, 47);   // F.C. rojo
         $colorRr    = imagecolorallocate($image, 46, 125, 50);   // F.R. verde
-        $colorTemp  = imagecolorallocate($image, 245, 124, 0);   // Temp. naranja
 
         // Fondo
         imagefilledrectangle($image, 0, 0, $width, $height, $bgWhite);
@@ -80,11 +79,15 @@ class VitalSignsChartGenerator
         }
 
         // Eje Y: escala de referencia (F.C.)
+        $axisFont = 4;
+        $axisH = imagefontheight($axisFont);
         for ($v = 50; $v <= 170; $v += 20) {
             $y = $valueToY($v, 50, 170);
-            imagestring($image, 2, $marginLeft - 28, $y - 6, (string) $v, $textMuted);
+            $label = (string) $v;
+            $lw = imagefontwidth($axisFont) * strlen($label);
+            imagestring($image, $axisFont, $marginLeft - $lw - 10, $y - (int) round($axisH / 2), $label, $textMuted);
         }
-        imagestring($image, 2, 8, (int) round($marginTop + $chartHeight / 2 - 6), 'F.C.', $textDark);
+        imagestring($image, $axisFont, 8, (int) round($marginTop + $chartHeight / 2 - $axisH / 2), 'F.C.', $textDark);
 
         // Eje X: granularidad adaptativa según duración
         $durationDays = $admissionDate->diffInDays($endDate);
@@ -111,8 +114,8 @@ class VitalSignsChartGenerator
         foreach ($ticks as $tick) {
             $x = $timeToX($tick['carbon']);
             imageline($image, $x, $marginTop, $x, $height - $marginBottom, $gridLight);
-            $labelWidth = imagefontwidth(2) * strlen($tick['label']);
-            imagestring($image, 2, $x - (int) round($labelWidth / 2), $height - $marginBottom + 6, $tick['label'], $textMuted);
+            $labelWidth = imagefontwidth(3) * strlen($tick['label']);
+            imagestring($image, 3, $x - (int) round($labelWidth / 2), $height - $marginBottom + 8, $tick['label'], $textMuted);
         }
 
         // Marco del área de la gráfica
@@ -133,13 +136,13 @@ class VitalSignsChartGenerator
                 $x = $timeToX(Carbon::parse($r->recorded_at));
 
                 if ($prevX !== null) {
-                    // Trazo grueso: 3 líneas paralelas.
-                    imageline($image, $prevX, $prevY - 1, $x, $y - 1, $color);
-                    imageline($image, $prevX, $prevY, $x, $y, $color);
-                    imageline($image, $prevX, $prevY + 1, $x, $y + 1, $color);
+                    // Trazo grueso: 5 líneas paralelas.
+                    for ($d = -2; $d <= 2; $d++) {
+                        imageline($image, $prevX, $prevY + $d, $x, $y + $d, $color);
+                    }
                 }
 
-                imagefilledellipse($image, $x, $y, 6, 6, $color);
+                imagefilledellipse($image, $x, $y, 9, 9, $color);
 
                 $prevX = $x;
                 $prevY = $y;
@@ -148,24 +151,23 @@ class VitalSignsChartGenerator
 
         $drawLine('heart_rate', 50, 170, $colorHr);
         $drawLine('respiratory_rate', 10, 40, $colorRr);
-        $drawLine('temperature', 35, 41, $colorTemp);
 
         // Leyenda
-        $legendY = 15;
+        $legendFont = 5;
+        $legendY = 18;
         $legendX = $marginLeft;
         $legendItems = [
             ['F.C.', $colorHr],
             ['F.R.', $colorRr],
-            ['Temp.', $colorTemp],
         ];
         foreach ($legendItems as [$label, $color]) {
-            imagefilledrectangle($image, $legendX, $legendY + 3, $legendX + 14, $legendY + 7, $color);
-            imagestring($image, 3, $legendX + 18, $legendY, $label, $textDark);
-            $legendX += 18 + imagefontwidth(3) * strlen($label) + 18;
+            imagefilledrectangle($image, $legendX, $legendY + 4, $legendX + 20, $legendY + 12, $color);
+            imagestring($image, $legendFont, $legendX + 26, $legendY, $label, $textDark);
+            $legendX += 26 + imagefontwidth($legendFont) * strlen($label) + 26;
         }
 
         // Título
-        imagestring($image, 4, $marginLeft, 0, 'Grafica de signos vitales - Estancia completa', $textDark);
+        imagestring($image, 5, $marginLeft, 0, 'Grafica de signos vitales - Estancia completa', $textDark);
 
         // Exportar a base64 (en memoria)
         ob_start();

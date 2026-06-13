@@ -25,7 +25,7 @@ class NursingSheetController extends Controller
             }
         }
 
-        $stay->load(['patient', 'room']);
+        $stay->load(['patient', 'room', 'glucoseMonitoringOrders', 'glucoseReadings']);
 
         // Lecturas de signos vitales agrupadas por turno (clave: fecha_turno).
         $readings = VitalSignReading::forStay($stay->id)

@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\DoctorSpecialty;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,16 +14,15 @@ class StoreUserRequest extends FormRequest
 
     public function rules(): array
     {
-        $specialtyValues = implode(',', array_column(DoctorSpecialty::cases(), 'value'));
-
         return [
-            'name'          => 'required|string|max:100',
-            'last_name_one' => 'required|string|max:100',
-            'last_name_two' => 'nullable|string|max:100',
-            'email'         => 'required|email|max:255|unique:users,email',
-            'password'      => 'required|string|min:8|confirmed',
-            'role'          => ['required', Rule::in(['admin', 'doctor', 'nurse'])],
-            'specialty'     => ["required_if:role,doctor", 'nullable', "in:{$specialtyValues}"],
+            'name'            => 'required|string|max:100',
+            'last_name_one'   => 'required|string|max:100',
+            'last_name_two'   => 'nullable|string|max:100',
+            'email'           => 'required|email|max:255|unique:users,email',
+            'password'        => 'required|string|min:8|confirmed',
+            'role'            => ['required', Rule::in(['admin', 'doctor', 'nurse'])],
+            'specialty_ids'   => ['nullable', 'array'],
+            'specialty_ids.*' => ['integer', Rule::exists('specialties', 'id')],
         ];
     }
 
@@ -42,8 +40,7 @@ class StoreUserRequest extends FormRequest
             'password.confirmed'     => 'Las contraseñas no coinciden.',
             'role.required'          => 'El rol es obligatorio.',
             'role.in'                => 'El rol seleccionado no es válido.',
-            'specialty.required_if'  => 'La especialidad es obligatoria para médicos.',
-            'specialty.in'           => 'La especialidad seleccionada no es válida.',
+            'specialty_ids.*.exists' => 'Una de las especialidades seleccionadas no es válida.',
         ];
     }
 }

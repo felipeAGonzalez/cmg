@@ -1,14 +1,19 @@
 <?php
 
+use App\Http\Controllers\Admin\SpecialtyController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\FluidBalanceCaptureController;
 use App\Http\Controllers\FluidBalanceOrderController;
 use App\Http\Controllers\FrontSheetController;
+use App\Http\Controllers\GlucoseMonitoringOrderController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MedicationAdministrationController;
 use App\Http\Controllers\MedicationOrderController;
 use App\Http\Controllers\NursingEntryController;
 use App\Http\Controllers\NursingSheetController;
+use App\Http\Controllers\AdmissionNotePdfController;
+use App\Http\Controllers\AnesthesiaConsentController;
+use App\Http\Controllers\AuthorizedConsentController;
 use App\Http\Controllers\NursingSheetPdfController;
 use App\Http\Controllers\PasswordChangeController;
 use App\Http\Controllers\PatientController;
@@ -105,6 +110,15 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
             Route::post('/fluid-balance-orders/{fluidBalanceOrder}/suspend', [FluidBalanceOrderController::class, 'suspend'])->name('fluidBalanceOrders.suspend');
         });
 
+        // ─── Órdenes de monitoreo de glucemia (admin + doctor + nurse) ───────
+        // La validación fina de permisos se hace en el controlador.
+        Route::middleware('role:admin,doctor,nurse')->group(function () {
+            Route::get('/stays/{stay}/glucose-monitoring-orders/create', [GlucoseMonitoringOrderController::class, 'create'])->name('glucoseMonitoringOrders.create');
+            Route::post('/stays/{stay}/glucose-monitoring-orders', [GlucoseMonitoringOrderController::class, 'store'])->name('glucoseMonitoringOrders.store');
+            Route::get('/glucose-monitoring-orders/{glucoseMonitoringOrder}/suspend', [GlucoseMonitoringOrderController::class, 'suspendForm'])->name('glucoseMonitoringOrders.suspendForm');
+            Route::post('/glucose-monitoring-orders/{glucoseMonitoringOrder}/suspend', [GlucoseMonitoringOrderController::class, 'suspend'])->name('glucoseMonitoringOrders.suspend');
+        });
+
         // ─── Captura del balance de líquidos hora por hora ───────────────────
         // Consulta: admin + nurse + médicos asignados (validación en controlador).
         Route::middleware('role:admin,doctor,nurse')->group(function () {
@@ -155,6 +169,24 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
             Route::get('/stays/{stay}/nursing-sheets/pdf', [NursingSheetPdfController::class, 'show'])->name('nursingSheets.pdf');
         });
 
+        // ─── PDF de Nota de Ingreso (admin + nurse + médicos asignados) ──────
+        Route::middleware('role:admin,nurse,doctor')->group(function () {
+            Route::get('/stays/{stay}/admission-note/pdf', [AdmissionNotePdfController::class, 'show'])->name('admissionNote.pdf');
+        });
+
+        // ─── Consentimientos (admin + nurse + médicos asignados) ────────────
+        Route::middleware('role:admin,doctor,nurse')->group(function () {
+            // Consentimiento Autorizado Bajo Información
+            Route::get('/stays/{stay}/authorized-consent/edit', [AuthorizedConsentController::class, 'edit'])->name('authorizedConsent.edit');
+            Route::put('/stays/{stay}/authorized-consent', [AuthorizedConsentController::class, 'update'])->name('authorizedConsent.update');
+            Route::get('/stays/{stay}/authorized-consent/pdf', [AuthorizedConsentController::class, 'pdf'])->name('authorizedConsent.pdf');
+
+            // Consentimiento Informado para Anestesia
+            Route::get('/stays/{stay}/anesthesia-consent/edit', [AnesthesiaConsentController::class, 'edit'])->name('anesthesiaConsent.edit');
+            Route::put('/stays/{stay}/anesthesia-consent', [AnesthesiaConsentController::class, 'update'])->name('anesthesiaConsent.update');
+            Route::get('/stays/{stay}/anesthesia-consent/pdf', [AnesthesiaConsentController::class, 'pdf'])->name('anesthesiaConsent.pdf');
+        });
+
         // ─── Traslado de cuartos (solo nurse) ───────────────────────────────
         Route::middleware('role:nurse')->group(function () {
             Route::get('/stays/{stay}/transfer', [RoomTransferController::class, 'create'])->name('roomTransfers.create');
@@ -170,6 +202,14 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
             Route::delete('/stay-doctors/{stayDoctor}', [StayDoctorController::class, 'destroy'])->name('stayDoctors.destroy');
 
             Route::resource('users', UserController::class)->except(['show']);
+
+            // Catálogo de especialidades (sin destroy: solo activar/desactivar).
+            Route::get('/admin/specialties', [SpecialtyController::class, 'index'])->name('specialties.index');
+            Route::get('/admin/specialties/create', [SpecialtyController::class, 'create'])->name('specialties.create');
+            Route::post('/admin/specialties', [SpecialtyController::class, 'store'])->name('specialties.store');
+            Route::get('/admin/specialties/{specialty}/edit', [SpecialtyController::class, 'edit'])->name('specialties.edit');
+            Route::put('/admin/specialties/{specialty}', [SpecialtyController::class, 'update'])->name('specialties.update');
+            Route::post('/admin/specialties/{specialty}/toggle', [SpecialtyController::class, 'toggle'])->name('specialties.toggle');
         });
 
         // ─── Vista del doctor ────────────────────────────────────────────────

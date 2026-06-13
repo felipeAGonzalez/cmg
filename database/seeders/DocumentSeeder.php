@@ -38,7 +38,7 @@ class DocumentSeeder extends Seeder
                 'type'                   => 'medical_note',
                 'is_universal'           => true,
                 'available_on_discharge' => false,
-                'display_order'          => 2,
+                'display_order'          => 3,
             ],
             [
                 'code'                   => 'admission_note',
@@ -48,7 +48,7 @@ class DocumentSeeder extends Seeder
                 'type'                   => 'medical_note',
                 'is_universal'           => true,
                 'available_on_discharge' => false,
-                'display_order'          => 3,
+                'display_order'          => 2,
             ],
             [
                 'code'                   => 'discharge_note',
@@ -89,6 +89,26 @@ class DocumentSeeder extends Seeder
                 'is_universal'           => true,
                 'available_on_discharge' => false,
                 'display_order'          => 7,
+            ],
+            [
+                'code'                   => 'authorized_consent',
+                'name'                   => 'Consentimiento Autorizado Bajo Información',
+                'description'            => 'Autorización general para procedimientos diagnósticos, terapéuticos y quirúrgicos. Captura datos del responsable legal.',
+                'icon'                   => 'bi-file-earmark-check',
+                'type'                   => 'consent',
+                'is_universal'           => true,
+                'available_on_discharge' => false,
+                'display_order'          => 8,
+            ],
+            [
+                'code'                   => 'anesthesia_consent',
+                'name'                   => 'Consentimiento Informado para Anestesia',
+                'description'            => 'Consentimiento específico para la aplicación de anestesia. Incluye opciones de negación y revocación.',
+                'icon'                   => 'bi-file-earmark-medical',
+                'type'                   => 'consent',
+                'is_universal'           => true,
+                'available_on_discharge' => false,
+                'display_order'          => 9,
             ],
         ];
 

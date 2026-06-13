@@ -70,9 +70,9 @@
                                 };
                             @endphp
                             <span class="badge {{ $roleBadge }}">{{ $roleLabel }}</span>
-                            @if($user->isDoctor() && $user->specialty)
+                            @if($user->isDoctor() && $user->specialtiesLabel())
                                 <span class="text-muted small">
-                                    ({{ \App\Enums\DoctorSpecialty::from($user->specialty)->label() }})
+                                    ({{ $user->specialtiesLabel() }})
                                 </span>
                             @endif
                         </td>
