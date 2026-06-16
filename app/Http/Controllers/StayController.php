@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\DoctorSpecialty;
+use App\Http\Requests\DischargeStayRequest;
 use App\Http\Requests\StoreBirthRequest;
 use App\Http\Requests\StoreStayRequest;
 use App\Models\Patient;
@@ -160,14 +161,17 @@ class StayController extends Controller
             ->with('success', 'Nacimiento registrado correctamente. El recién nacido fue ingresado al Cuarto ' . $room->number . '.');
     }
 
-    public function discharge(Stay $stay): RedirectResponse
+    public function discharge(DischargeStayRequest $request, Stay $stay): RedirectResponse
     {
         if (! $stay->isActive()) {
             return back()->with('error', 'Esta estancia ya fue dada de alta.');
         }
 
         $room = $stay->room;
-        $stay->update(['discharge_date' => now()]);
+        $stay->update([
+            'discharge_date'   => now(),
+            'discharge_reason' => $request->validated('discharge_reason'),
+        ]);
 
         // Al egresar, se suspenden automáticamente las prescripciones activas.
         $stay->medicationOrders()->whereNull('suspended_at')->update([

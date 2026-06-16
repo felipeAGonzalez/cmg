@@ -104,13 +104,57 @@
                                    class="form-control" value="{{ old('evacuations_count', $summary->evacuations_count) }}">
                         </div>
                         <div class="col-md-4">
-                            <label for="vomit_suction_drainage_ml" class="form-label fw-semibold">Vómito / aspiración / drenaje (ml)</label>
-                            <input type="number" min="0" max="10000" id="vomit_suction_drainage_ml" name="vomit_suction_drainage_ml"
-                                   class="form-control" value="{{ old('vomit_suction_drainage_ml', $summary->vomit_suction_drainage_ml) }}">
+                            <label for="vomit_ml" class="form-label fw-semibold">Vómito (ml)</label>
+                            <input type="number" min="0" max="10000" id="vomit_ml" name="vomit_ml"
+                                   class="form-control @error('vomit_ml') is-invalid @enderror"
+                                   value="{{ old('vomit_ml', $summary->vomit_ml ?? 0) }}">
+                            @error('vomit_ml')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-4">
+                            <label for="aspiration_ml" class="form-label fw-semibold">Aspiración (ml)</label>
+                            <input type="number" min="0" max="10000" id="aspiration_ml" name="aspiration_ml"
+                                   class="form-control @error('aspiration_ml') is-invalid @enderror"
+                                   value="{{ old('aspiration_ml', $summary->aspiration_ml ?? 0) }}">
+                            @error('aspiration_ml')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-4">
+                            <label for="drainage_ml" class="form-label fw-semibold">Drenaje (ml)</label>
+                            <input type="number" min="0" max="10000" id="drainage_ml" name="drainage_ml"
+                                   class="form-control @error('drainage_ml') is-invalid @enderror"
+                                   value="{{ old('drainage_ml', $summary->drainage_ml ?? 0) }}">
+                            @error('drainage_ml')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        @php
+                            $drainageValue = (int) old('drainage_ml', $summary->drainage_ml ?? 0);
+                            $hasDrainage   = $drainageValue > 0;
+                        @endphp
+                        <div class="col-md-12" id="drainage-type-block"
+                             style="display: {{ $hasDrainage ? 'block' : 'none' }};">
+                            <label for="drainage_type" class="form-label fw-semibold">Tipo de drenaje</label>
+                            <input type="text" id="drainage_type" name="drainage_type" maxlength="200"
+                                   class="form-control @error('drainage_type') is-invalid @enderror"
+                                   value="{{ old('drainage_type', $summary->drainage_type) }}"
+                                   placeholder="Ej. Penrose, Jackson-Pratt, etc.">
+                            @error('drainage_type')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
                 </div>
             </div>
+
+            <script>
+                document.getElementById('drainage_ml').addEventListener('input', function () {
+                    var block = document.getElementById('drainage-type-block');
+                    block.style.display = parseInt(this.value, 10) > 0 ? 'block' : 'none';
+                });
+            </script>
 
             {{-- 4. Estudios --}}
             <div class="accordion-item">

@@ -22,8 +22,7 @@
     <tr><td colspan="2" style="border:none; background-color:#E91E63; color:white; padding:6px 12px; font-weight:bold; font-size:12px; text-align:center;">
         CARTA DE CONSENTIMIENTO INFORMADO PARA LA APLICACIÓN DE ANESTESIA
     </td></tr>
-    <tr><td colspan="2" style="border:none; text-align:right; font-size:8px; color:#333; padding-top:4px;">Dr. Jesús Rogelio Páramo Figueroa</td></tr>
-    <tr><td colspan="2" style="border:none; text-align:right; font-size:8px; color:#333;">Privada Solar #3 Zona Centro Acámbaro, GTO.</td></tr>
+    <tr><td colspan="2" style="border:none; text-align:right; font-size:8px; color:#333; padding-top:4px;">Privada Solar #3 Zona Centro Acámbaro, GTO.</td></tr>
     <tr><td colspan="2" style="border:none; text-align:right; font-size:8px; color:#333; padding-bottom:6px;">C.P. 38600 Teléfonos 01 (417) 172 04 30 y 172 81 30</td></tr>
 
     {{-- Datos del paciente y representante (ficha, alineado a la izquierda) --}}

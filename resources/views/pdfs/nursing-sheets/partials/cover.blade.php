@@ -37,7 +37,16 @@
         <td class="label">Fecha de ingreso</td>
         <td>{{ $admission ? $admission->format('d/m/Y H:i') : '—' }}</td>
         <td class="label">Fecha de egreso</td>
-        <td>{{ $discharge ? $discharge->format('d/m/Y H:i') : '— (hospitalizado)' }}</td>
+        <td>
+            @if($discharge)
+                {{ $discharge->format('d/m/Y H:i') }}
+                @if($stay->dischargeReasonLabel())
+                    <br><span style="font-size:8px; color:#555;">Motivo: {{ $stay->dischargeReasonLabel() }}</span>
+                @endif
+            @else
+                — (hospitalizado)
+            @endif
+        </td>
     </tr>
     <tr>
         <td class="label">Diagnóstico inicial</td>

@@ -23,7 +23,6 @@
     </td></tr>
 
     {{-- Datos institucionales fijos (una fila por renglón; sin <br>) --}}
-    <tr><td style="border:none; text-align:right; font-size:8px; color:#333;">Dr. Jesús Rogelio Páramo Figueroa</td></tr>
     <tr><td style="border:none; text-align:right; font-size:8px; color:#333;">Privada Solar #3 Zona Centro Acámbaro, GTO.</td></tr>
     <tr><td style="border:none; text-align:right; font-size:8px; color:#333; padding-bottom:0px;">C.P. 38600 Teléfonos 01 (417) 172 04 30 y 172 81 30</td></tr>
 

@@ -26,23 +26,24 @@
             padding-bottom: 6px;
         }
 
-        header .brand {
-            text-align: center;
-        }
+        header table { width: 100%; border-collapse: collapse; }
+        header td { border: none; padding: 0; vertical-align: middle; }
+        header td.logo-cell { width: 70px; text-align: left; }
+        header td.brand-cell { text-align: center; }
 
         header .logo {
-            max-height: 56px;
-            margin-bottom: 2px;
+            max-height: 60px;
+            max-width: 65px;
         }
 
-        header .brand .name {
+        header .name {
             font-size: 15px;
             font-weight: bold;
             color: #1976D2;
             letter-spacing: .5px;
         }
 
-        header .brand .subtitle {
+        header .subtitle {
             font-size: 9px;
             color: #555;
         }
@@ -119,20 +120,26 @@
 </head>
 <body>
     <header>
-        <div class="brand">
-            @php
-                $logoPath = public_path('logos/cmg.png');
-                $logoData = is_file($logoPath)
-                    ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath))
-                    : null;
-            @endphp
-
-            @if($logoData)
-                <img src="{{ $logoData }}" class="logo" alt="CMG">
-            @endif
-            <div class="name">CENTRO MÉDICO GUADALUPANO</div>
-            <div class="subtitle">Expediente clínico</div>
-        </div>
+        @php
+            $logoPath = public_path('logos/CMG.png');
+            $logoData = is_file($logoPath)
+                ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath))
+                : null;
+        @endphp
+        <table>
+            <tr>
+                <td class="logo-cell">
+                    @if($logoData)
+                        <img src="{{ $logoData }}" class="logo" alt="CMG">
+                    @endif
+                </td>
+                <td class="brand-cell">
+                    <div class="name">CENTRO MÉDICO GUADALUPANO</div>
+                    <div class="subtitle">Expediente clínico</div>
+                </td>
+                <td style="width:70px;"></td>
+            </tr>
+        </table>
     </header>
 
     <footer>

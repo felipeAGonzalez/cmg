@@ -11,8 +11,11 @@
         'Electrólitos / elementos sang.' => $summary->electrolytes_blood_elements,
         'Uresis (ml)'                    => $summary->urine_output_ml,
         'Evacuaciones'                   => $summary->evacuations_count,
-        'Vómito / aspiración / drenaje (ml)' => $summary->vomit_suction_drainage_ml,
-        'Lab / productos biológicos'     => $summary->lab_biological_products,
+        'Vómito (ml)'     => $summary->vomit_ml,
+        'Aspiración (ml)' => $summary->aspiration_ml,
+        'Drenaje (ml)'    => $summary->drainage_ml . ($summary->drainage_ml > 0 && $summary->drainage_type
+                                ? ' (' . $summary->drainage_type . ')' : ''),
+        'Lab / productos biológicos' => $summary->lab_biological_products,
         'Reactivos'                      => $summary->reagents,
         'Estudios / operaciones'         => $summary->studies_operations,
     ];

@@ -639,30 +639,58 @@
     @if($user->isAdmin() || $user->isNurse())
     <div class="modal fade" id="dischargeModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
-            <div class="modal-content shadow">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title fw-bold">Confirmar alta</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                    <p>¿Confirmas dar de alta a <strong>{{ $stay->patient->fullName() }}</strong>?</p>
-                    <p class="text-muted small mb-0">
-                        El Cuarto {{ $room->number }} quedará disponible.
-                        Esta acción se registrará con la fecha y hora actuales.
-                    </p>
-                </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <form method="POST" action="{{ route('stays.discharge', $stay) }}">
-                        @csrf
+            <form method="POST" action="{{ route('stays.discharge', $stay) }}">
+                @csrf
+                <div class="modal-content shadow">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title fw-bold">
+                            <i class="bi bi-box-arrow-up-right text-danger me-1"></i>Dar de alta al paciente
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Vas a dar de alta a <strong>{{ $stay->patient->fullName() }}</strong> del Cuarto <strong>{{ $room->number }}</strong>.</p>
+                        <p class="text-muted small">
+                            Al confirmar, se suspenderán automáticamente todas las órdenes activas
+                            (medicamentos, balance de líquidos, monitoreo de glucemia) y se marcarán
+                            como completados los documentos correspondientes.
+                        </p>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                Motivo del alta <span class="text-danger">*</span>
+                            </label>
+                            <select name="discharge_reason" required
+                                    class="form-select @error('discharge_reason') is-invalid @enderror">
+                                <option value="">Selecciona un motivo…</option>
+                                @foreach(config('discharge_reasons') as $key => $label)
+                                    <option value="{{ $key }}"
+                                            {{ old('discharge_reason') === $key ? 'selected' : '' }}>
+                                        {{ $label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('discharge_reason')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-danger">
-                            <i class="bi bi-box-arrow-up-right me-1"></i>Dar de alta
+                            <i class="bi bi-check-circle me-1"></i>Confirmar alta
                         </button>
-                    </form>
+                    </div>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
+    @if($errors->has('discharge_reason'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            new bootstrap.Modal(document.getElementById('dischargeModal')).show();
+        });
+    </script>
+    @endif
     @endif
 
     {{-- Modal: Escribir indicación (admin + nurse en nombre de médico asignado) --}}

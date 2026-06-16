@@ -46,7 +46,14 @@ class ShiftSummaryController extends Controller
             abort(403, 'Solo se puede editar el resumen del turno en curso.');
         }
 
-        $summary->fill($request->validated());
+        $data = $request->validated();
+
+        // Si no hay drenaje, limpiar el tipo para no dejar texto huérfano.
+        if (($data['drainage_ml'] ?? 0) == 0) {
+            $data['drainage_type'] = null;
+        }
+
+        $summary->fill($data);
         $summary->recorded_by = auth()->id();
         $summary->save();
 

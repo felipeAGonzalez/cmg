@@ -81,10 +81,22 @@
                         <td style="padding:2px 4px;">{{ $summary->evacuations_count ?? '—' }}</td>
                     </tr>
                     <tr>
-                        <td style="padding:2px 4px;"><strong>Vómito/succ/drenajes (ml):</strong></td>
-                        <td style="padding:2px 4px;">{{ $summary->vomit_suction_drainage_ml ?? '—' }}</td>
+                        <td style="padding:2px 4px;"><strong>Vómito (ml):</strong></td>
+                        <td style="padding:2px 4px;">{{ $summary->vomit_ml }}</td>
+                        <td style="padding:2px 4px;"><strong>Aspiración (ml):</strong></td>
+                        <td style="padding:2px 4px;">{{ $summary->aspiration_ml }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:2px 4px;"><strong>Drenaje (ml):</strong></td>
+                        <td style="padding:2px 4px;">{{ $summary->drainage_ml }}</td>
+                        <td style="padding:2px 4px;"><strong>Tipo de drenaje:</strong></td>
+                        <td style="padding:2px 4px;">
+                            {{ $summary->drainage_ml > 0 ? ($summary->drainage_type ?: '—') : '—' }}
+                        </td>
+                    </tr>
+                    <tr>
                         <td style="padding:2px 4px;"><strong>Electrolitos:</strong></td>
-                        <td style="padding:2px 4px;">{{ $summary->electrolytes_blood_elements ?: '—' }}</td>
+                        <td style="padding:2px 4px;" colspan="3">{{ $summary->electrolytes_blood_elements ?: '—' }}</td>
                     </tr>
                     <tr>
                         <td style="padding:2px 4px;"><strong>Laboratorios:</strong></td>

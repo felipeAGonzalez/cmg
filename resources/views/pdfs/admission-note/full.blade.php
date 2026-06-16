@@ -43,7 +43,11 @@
         </tr>
         <tr>
             <td style="padding:3px 6px; border-bottom:1px solid #ddd;">
-                <strong>FECHA DE EGRESO:</strong> {{ $discharge ? $discharge->format('d/m/Y H:i') : '—' }}
+                <strong>FECHA DE EGRESO:</strong>
+                {{ $discharge ? $discharge->format('d/m/Y H:i') : '—' }}
+                @if($stay->dischargeReasonLabel())
+                    <span style="font-size:8px; color:#555;">({{ $stay->dischargeReasonLabel() }})</span>
+                @endif
             </td>
             <td style="padding:3px 6px; border-bottom:1px solid #ddd;">
                 <strong>DIAGNÓSTICO:</strong> {{ $stay->diagnosis ?: '—' }}

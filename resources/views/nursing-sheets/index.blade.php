@@ -80,6 +80,33 @@
         </div>
     @endif
 
+    {{-- ════════ ACCESO RÁPIDO: BALANCE DE LÍQUIDOS ════════ --}}
+    @if($activeBalanceOrder)
+    <div class="alert alert-info d-flex align-items-center mb-3 shadow-sm" style="border-left:4px solid #0d6efd;">
+        <i class="bi bi-droplet-half fs-4 me-3 flex-shrink-0"></i>
+        <div class="flex-grow-1">
+            <div class="fw-semibold">
+                Balance de líquidos en curso
+                @php $currentDay = $activeBalanceOrder->currentDay(); @endphp
+                @if($currentDay)
+                    <span class="fw-normal text-muted small">
+                        — Día {{ $currentDay->day_number }},
+                        iniciado {{ \Carbon\Carbon::parse($currentDay->start_at)->format('d/m/Y H:i') }}
+                    </span>
+                @endif
+            </div>
+            <a href="{{ route('fluidBalanceCaptures.index', $activeBalanceOrder) }}"
+               class="small text-decoration-none">Ver capturas completas →</a>
+        </div>
+        @if($user->isAdmin() || $user->isNurse())
+        <a href="{{ route('fluidBalanceCaptures.index', $activeBalanceOrder) }}#new-entry"
+           class="btn btn-primary btn-sm ms-3">
+            <i class="bi bi-plus-circle me-1"></i>Registrar toma
+        </a>
+        @endif
+    </div>
+    @endif
+
     {{-- ════════ SIGNOS VITALES — TURNO ACTUAL ════════ --}}
     <div class="card border-0 shadow-sm mb-3">
         <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center">

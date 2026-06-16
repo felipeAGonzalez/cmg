@@ -19,6 +19,7 @@ class Stay extends Model
         'weight_kg',
         'admission_date',
         'discharge_date',
+        'discharge_reason',
     ];
 
     protected function casts(): array
@@ -49,6 +50,15 @@ class Stay extends Model
     public function births(): HasMany
     {
         return $this->hasMany(Stay::class, 'birth_parent_stay_id');
+    }
+
+    public function dischargeReasonLabel(): ?string
+    {
+        if (! $this->discharge_reason) {
+            return null;
+        }
+
+        return config('discharge_reasons')[$this->discharge_reason] ?? $this->discharge_reason;
     }
 
     /** True si esta estancia es un recién nacido ligado a una madre. */

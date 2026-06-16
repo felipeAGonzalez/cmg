@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Enums\DoctorSpecialty;
+use App\Models\Specialty;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -18,13 +20,12 @@ class UserSeeder extends Seeder
                 'last_name_two'       => null,
                 'password'            => Hash::make('Admin1234'),
                 'role'                => 'admin',
-                'specialty'           => null,
                 'must_change_password' => false,
                 'is_active'           => true,
             ]
         );
 
-        User::updateOrCreate(
+        $doctor = User::updateOrCreate(
             ['email' => 'doctor@example.com'],
             [
                 'name'                => 'Doctor',
@@ -32,11 +33,19 @@ class UserSeeder extends Seeder
                 'last_name_two'       => null,
                 'password'            => Hash::make('Doctor1234'),
                 'role'                => 'doctor',
-                'specialty'           => 'general',
                 'must_change_password' => false,
                 'is_active'           => true,
             ]
         );
+
+        // La especialidad ahora vive en el catálogo + pivot user_specialty.
+        // Se asocia al doctor de ejemplo la especialidad "Medicina General".
+        $generalSpecialty = Specialty::firstOrCreate(
+            ['name' => DoctorSpecialty::GENERAL->label()],
+            ['is_active' => true],
+        );
+
+        $doctor->specialties()->syncWithoutDetaching([$generalSpecialty->id]);
 
         User::updateOrCreate(
             ['email' => 'nurse@example.com'],
@@ -46,7 +55,6 @@ class UserSeeder extends Seeder
                 'last_name_two'       => null,
                 'password'            => Hash::make('Nurse1234'),
                 'role'                => 'nurse',
-                'specialty'           => null,
                 'must_change_password' => false,
                 'is_active'           => true,
             ]

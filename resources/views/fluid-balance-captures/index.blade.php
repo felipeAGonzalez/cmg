@@ -320,6 +320,13 @@ document.addEventListener('DOMContentLoaded', function () {
         openModal('newEntryModal');
     @endif
 
+    // Abrir modal automáticamente si se llegó desde el acceso rápido de Hojas de Enfermería.
+    @if($user->isAdmin() || $user->isNurse())
+    if (window.location.hash === '#new-entry') {
+        openModal('newEntryModal');
+    }
+    @endif
+
     const numericFields = @json(array_merge(array_keys($inputCols), array_keys($outputCols)));
     const editForm = document.getElementById('editEntryForm');
 

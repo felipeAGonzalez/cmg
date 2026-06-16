@@ -25,7 +25,7 @@ class NursingSheetController extends Controller
             }
         }
 
-        $stay->load(['patient', 'room', 'glucoseMonitoringOrders', 'glucoseReadings']);
+        $stay->load(['patient', 'room', 'glucoseMonitoringOrders', 'glucoseReadings', 'fluidBalanceOrders']);
 
         // Lecturas de signos vitales agrupadas por turno (clave: fecha_turno).
         $readings = VitalSignReading::forStay($stay->id)
@@ -51,6 +51,8 @@ class NursingSheetController extends Controller
             ->get();
         $administrationsTotal = $stay->medicationAdministrations()->count();
 
+        $activeBalanceOrder = $stay->activeFluidBalanceOrder();
+
         return view('nursing-sheets.index', compact(
             'stay',
             'readings',
@@ -59,6 +61,7 @@ class NursingSheetController extends Controller
             'currentKey',
             'recentAdministrations',
             'administrationsTotal',
+            'activeBalanceOrder',
         ));
     }
 }
