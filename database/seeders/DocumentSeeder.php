@@ -21,6 +21,16 @@ class DocumentSeeder extends Seeder
 
         $documents = [
             [
+                'code'                   => 'triage',
+                'name'                   => 'Hoja de Triage',
+                'description'            => 'Clasificación de paciente para atención en el servicio de urgencia.',
+                'icon'                   => 'bi-clipboard-pulse',
+                'type'                   => 'triage',
+                'is_universal'           => false,
+                'available_on_discharge' => false,
+                'display_order'          => 0,
+            ],
+            [
                 'code'                   => 'front_sheet',
                 'name'                   => 'Hoja Frontal',
                 'description'            => 'Resumen general del paciente al ingreso.',

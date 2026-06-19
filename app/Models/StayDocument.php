@@ -15,6 +15,7 @@ class StayDocument extends Model
     protected $fillable = [
         'stay_id',
         'document_id',
+        'triage_record_id',
         'status',
         'form_data',
         'completed_at',
@@ -36,6 +37,11 @@ class StayDocument extends Model
     public function document(): BelongsTo
     {
         return $this->belongsTo(Document::class);
+    }
+
+    public function triageRecord(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\TriageRecord::class);
     }
 
     public function statusLabel(): string

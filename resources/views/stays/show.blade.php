@@ -370,6 +370,7 @@
                                 </td>
                                 @if(! $user->isDoctor())
                                 @php
+                                    $isTriage            = $doc->code === 'triage';
                                     $isFrontSheet        = $doc->code === 'front_sheet';
                                     $isNursingSheets     = $doc->code === 'nursing_sheets';
                                     $isAdmissionNote     = $doc->code === 'admission_note';
@@ -380,7 +381,9 @@
                                 @endphp
                                 <td class="text-end text-nowrap">
                                     {{-- Llenar --}}
-                                    @if($isFrontSheet)
+                                    @if($isTriage)
+                                        {{-- Sin formulario de llenado: se genera desde el triage --}}
+                                    @elseif($isFrontSheet)
                                         <a href="{{ route('frontSheet.edit', $stay) }}" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-pencil"></i> Llenar
                                         </a>
@@ -418,7 +421,11 @@
                                     @endif
 
                                     {{-- Ver --}}
-                                    @if($isFrontSheet && $isCompleted)
+                                    @if($isTriage && $sd->triage_record_id)
+                                        <a href="{{ route('triage.pdf', $sd->triage_record_id) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> Ver
+                                        </a>
+                                    @elseif($isFrontSheet && $isCompleted)
                                         <a href="{{ route('frontSheet.pdf', $stay) }}" target="_blank" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-eye"></i> Ver
                                         </a>

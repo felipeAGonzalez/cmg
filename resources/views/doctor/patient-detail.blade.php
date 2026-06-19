@@ -268,6 +268,7 @@
                             @foreach($documents as $sd)
                             @php
                                 $doc             = $sd->document;
+                                $isTriage            = $doc->code === 'triage';
                                 $isFrontSheet        = $doc->code === 'front_sheet';
                                 $isNursingSheets     = $doc->code === 'nursing_sheets';
                                 $isAdmissionNote     = $doc->code === 'admission_note';
@@ -300,7 +301,11 @@
                                     <span class="badge {{ $sd->statusBadgeClass() }}">{{ $sd->statusLabel() }}</span>
                                 </td>
                                 <td class="text-end text-nowrap">
-                                    @if($isFrontSheet && $isCompleted)
+                                    @if($isTriage && $sd->triage_record_id)
+                                        <a href="{{ route('triage.pdf', $sd->triage_record_id) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> Ver
+                                        </a>
+                                    @elseif($isFrontSheet && $isCompleted)
                                         <a href="{{ route('frontSheet.pdf', $stay) }}" target="_blank" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-eye"></i> Ver
                                         </a>

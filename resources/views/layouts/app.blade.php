@@ -54,6 +54,19 @@
                 </li>
                 @endif
 
+                @if(Auth::user()->isAdmin() || Auth::user()->isNurse() || Auth::user()->isDoctor())
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('waitingRoom.*', 'triage.*') ? 'active fw-semibold' : '' }}"
+                       href="{{ route('waitingRoom.index') }}">
+                        <i class="bi bi-clipboard-pulse me-1"></i>Sala de Espera
+                        @php $pendingTriageCount = \App\Models\TriageRecord::pending()->count(); @endphp
+                        @if($pendingTriageCount > 0)
+                            <span class="badge bg-danger ms-1">{{ $pendingTriageCount }}</span>
+                        @endif
+                    </a>
+                </li>
+                @endif
+
                 @if(Auth::user()->isAdmin())
                 <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('patients.*') ? 'active fw-semibold' : '' }}"

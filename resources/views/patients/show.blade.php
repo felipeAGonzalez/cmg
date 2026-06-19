@@ -36,6 +36,32 @@
         </div>
     </div>
 
+    {{-- Historial de triages --}}
+    @if($patient->triageRecords->isNotEmpty())
+    <h5 class="fw-bold mb-3">
+        <i class="bi bi-clipboard-pulse me-2"></i>Triages
+        <span class="badge bg-secondary ms-1">{{ $patient->triageRecords->count() }}</span>
+    </h5>
+    @foreach($patient->triageRecords as $tr)
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <div>
+                <span class="badge {{ $tr->colorBadgeClass() }} me-2">{{ $tr->colorLabel() }}</span>
+                <strong>{{ $tr->decisionLabel() }}</strong>
+                <span class="text-muted small ms-2">
+                    {{ $tr->evaluation_started_at->format('d/m/Y H:i') }}
+                    &middot; Puntaje: {{ $tr->total_score }}
+                    @if($tr->folio) &middot; Folio: {{ $tr->folio }} @endif
+                </span>
+            </div>
+            <a href="{{ route('triage.show', $tr) }}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-eye"></i> Ver
+            </a>
+        </div>
+    </div>
+    @endforeach
+    @endif
+
     {{-- Historial de estancias --}}
     <h5 class="fw-bold mb-3">
         <i class="bi bi-clock-history me-2"></i>Historial de estancias

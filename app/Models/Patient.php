@@ -32,6 +32,11 @@ class Patient extends Model
         return $this->hasMany(Stay::class);
     }
 
+    public function triageRecords(): HasMany
+    {
+        return $this->hasMany(TriageRecord::class)->orderByDesc('evaluation_started_at');
+    }
+
     public function currentStay(): HasOne
     {
         return $this->hasOne(Stay::class)->whereNull('discharge_date');

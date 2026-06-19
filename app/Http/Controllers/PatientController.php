@@ -52,6 +52,11 @@ class PatientController extends Controller
 
         $patient = Patient::create($data);
 
+        if ($request->input('return_to') === 'triage') {
+            return redirect()->route('triage.create', $patient)
+                ->with('success', 'Paciente registrado. Continúa con la hoja de triage.');
+        }
+
         return redirect()->route('patients.show', $patient)
             ->with('success', 'Paciente creado correctamente.');
     }
@@ -65,6 +70,7 @@ class PatientController extends Controller
             'stays.roomTransfers.fromRoom',
             'stays.roomTransfers.toRoom',
             'stays.roomTransfers.transferredBy',
+            'triageRecords',
         ]);
 
         return view('patients.show', compact('patient'));

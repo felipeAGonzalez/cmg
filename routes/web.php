@@ -23,7 +23,9 @@ use App\Http\Controllers\ShiftSummaryController;
 use App\Http\Controllers\StayController;
 use App\Http\Controllers\StayDoctorController;
 use App\Http\Controllers\StayMeasurementController;
+use App\Http\Controllers\TriageRecordController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WaitingRoomController;
 use App\Http\Controllers\VitalSignController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -193,11 +195,17 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
             Route::post('/stays/{stay}/transfer', [RoomTransferController::class, 'store'])->name('roomTransfers.store');
         });
 
+        // ─── Crear pacientes (admin + doctor + nurse, necesario para flujo de triage) ─
+        Route::middleware('role:admin,doctor,nurse')->group(function () {
+            Route::get('/patients/create', [PatientController::class, 'create'])->name('patients.create');
+            Route::post('/patients', [PatientController::class, 'store'])->name('patients.store');
+        });
+
         // ─── Administración (solo admin) ─────────────────────────────────────
         Route::middleware('role:admin')->group(function () {
 
             Route::resource('rooms', RoomController::class)->except(['show', 'index']);
-            Route::resource('patients', PatientController::class)->except(['edit', 'update']);
+            Route::resource('patients', PatientController::class)->except(['edit', 'update', 'create', 'store']);
 
             Route::delete('/stay-doctors/{stayDoctor}', [StayDoctorController::class, 'destroy'])->name('stayDoctors.destroy');
 
@@ -210,6 +218,22 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
             Route::get('/admin/specialties/{specialty}/edit', [SpecialtyController::class, 'edit'])->name('specialties.edit');
             Route::put('/admin/specialties/{specialty}', [SpecialtyController::class, 'update'])->name('specialties.update');
             Route::post('/admin/specialties/{specialty}/toggle', [SpecialtyController::class, 'toggle'])->name('specialties.toggle');
+        });
+
+        // ─── Triage + Sala de Espera (admin + doctor + nurse) ────────────────
+        Route::middleware('role:admin,doctor,nurse')->group(function () {
+            Route::get('/waiting-room', [WaitingRoomController::class, 'index'])->name('waitingRoom.index');
+            Route::get('/triage/start', [WaitingRoomController::class, 'start'])->name('triage.start');
+            Route::get('/triage/patients/search', [WaitingRoomController::class, 'searchPatients'])->name('triage.patients.search');
+
+            Route::get('/triage/create/{patient}', [TriageRecordController::class, 'create'])->name('triage.create');
+            Route::post('/triage', [TriageRecordController::class, 'store'])->name('triage.store');
+            Route::get('/triage/{triage}', [TriageRecordController::class, 'show'])->name('triage.show');
+            Route::get('/triage/{triage}/edit', [TriageRecordController::class, 'edit'])->name('triage.edit');
+            Route::put('/triage/{triage}', [TriageRecordController::class, 'update'])->name('triage.update');
+            Route::post('/triage/{triage}/disposition', [TriageRecordController::class, 'updateDisposition'])->name('triage.updateDisposition');
+            Route::post('/triage/{triage}/hospitalize', [TriageRecordController::class, 'hospitalize'])->name('triage.hospitalize');
+            Route::get('/triage/{triage}/pdf', [TriageRecordController::class, 'pdf'])->name('triage.pdf');
         });
 
         // ─── Vista del doctor ────────────────────────────────────────────────

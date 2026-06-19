@@ -22,9 +22,20 @@
     </div>
     @endif
 
+    @if(request('unidentified'))
+        <div class="alert alert-warning border-0 shadow-sm mb-4">
+            <i class="bi bi-exclamation-circle me-1"></i>
+            <strong>Paciente sin identificar</strong>: captura los datos que tengas
+            disponibles. Puedes completar la informaci&oacute;n despu&eacute;s.
+        </div>
+    @endif
+
     <div class="card border-0 shadow-sm p-4">
         <form method="POST" action="{{ route('patients.store') }}">
             @csrf
+            @if(request('return_to'))
+                <input type="hidden" name="return_to" value="{{ request('return_to') }}">
+            @endif
 
             <div class="row g-3">
                 <div class="col-12">
@@ -93,7 +104,7 @@
                 <button type="submit" class="btn btn-primary">
                     <i class="bi bi-floppy me-1"></i>Guardar
                 </button>
-                <a href="{{ route('patients.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+                <a href="{{ request('return_to') === 'triage' ? route('triage.start') : route('patients.index') }}" class="btn btn-outline-secondary">Cancelar</a>
             </div>
         </form>
     </div>
