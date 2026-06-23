@@ -9,15 +9,16 @@ class DocumentSeeder extends Seeder
 {
     public function run(): void
     {
-        // Migración de nombre heredado: el documento 'medical_history'
-        // ("Historia Clínica") fue renombrado por el cliente a 'nursing_sheets'
-        // ("Hojas de Enfermería"). Se renombra en sitio para no huérfanar los
-        // stay_documents existentes que ya apuntan a ese registro.
-        Document::where('code', 'medical_history')->update([
-            'code'        => 'nursing_sheets',
-            'name'        => 'Hojas de Enfermería',
-            'description' => 'Registros clínicos, signos vitales y observaciones de enfermería.',
-        ]);
+        // Migración de nombre heredado (idempotente): solo aplica si el
+        // registro antiguo aún existe y el nuevo aún no.
+        if (Document::where('code', 'medical_history')->exists()
+            && !Document::where('code', 'nursing_sheets')->exists()) {
+            Document::where('code', 'medical_history')->update([
+                'code'        => 'nursing_sheets',
+                'name'        => 'Hojas de Enfermería',
+                'description' => 'Registros clínicos, signos vitales y observaciones de enfermería.',
+            ]);
+        }
 
         $documents = [
             [
@@ -41,16 +42,6 @@ class DocumentSeeder extends Seeder
                 'display_order'          => 1,
             ],
             [
-                'code'                   => 'nursing_sheets',
-                'name'                   => 'Hojas de Enfermería',
-                'description'            => 'Registros clínicos, signos vitales y observaciones de enfermería.',
-                'icon'                   => 'bi-clipboard2-pulse',
-                'type'                   => 'medical_note',
-                'is_universal'           => true,
-                'available_on_discharge' => false,
-                'display_order'          => 3,
-            ],
-            [
                 'code'                   => 'admission_note',
                 'name'                   => 'Nota de Ingreso',
                 'description'            => 'Estado clínico del paciente al momento de admisión.',
@@ -61,14 +52,34 @@ class DocumentSeeder extends Seeder
                 'display_order'          => 2,
             ],
             [
+                'code'                   => 'medical_history',
+                'name'                   => 'Historia Clínica',
+                'description'            => 'Historia clínica del paciente capturada por el médico tratante.',
+                'icon'                   => 'bi-clipboard-heart',
+                'type'                   => 'medical',
+                'is_universal'           => true,
+                'available_on_discharge' => false,
+                'display_order'          => 3,
+            ],
+            [
+                'code'                   => 'nursing_sheets',
+                'name'                   => 'Hojas de Enfermería',
+                'description'            => 'Registros clínicos, signos vitales y observaciones de enfermería.',
+                'icon'                   => 'bi-clipboard2-pulse',
+                'type'                   => 'medical_note',
+                'is_universal'           => true,
+                'available_on_discharge' => false,
+                'display_order'          => 4,
+            ],
+            [
                 'code'                   => 'discharge_note',
                 'name'                   => 'Nota de Egreso',
                 'description'            => 'Resumen clínico al alta del paciente.',
                 'icon'                   => 'bi-box-arrow-right',
                 'type'                   => 'medical_note',
                 'is_universal'           => true,
-                'available_on_discharge' => true, // solo al dar de alta
-                'display_order'          => 4,
+                'available_on_discharge' => true,
+                'display_order'          => 5,
             ],
             [
                 'code'                   => 'informed_consent',
@@ -78,27 +89,7 @@ class DocumentSeeder extends Seeder
                 'type'                   => 'consent',
                 'is_universal'           => true,
                 'available_on_discharge' => false,
-                'display_order'          => 5,
-            ],
-            [
-                'code'                   => 'hospitalization_consent',
-                'name'                   => 'Consentimiento de Hospitalización',
-                'description'            => 'Autorización para el ingreso hospitalario.',
-                'icon'                   => 'bi-hospital',
-                'type'                   => 'consent',
-                'is_universal'           => true,
-                'available_on_discharge' => false,
                 'display_order'          => 6,
-            ],
-            [
-                'code'                   => 'procedures_consent',
-                'name'                   => 'Consentimiento de Procedimientos',
-                'description'            => 'Autorización para procedimientos médicos.',
-                'icon'                   => 'bi-clipboard2-check',
-                'type'                   => 'consent',
-                'is_universal'           => true,
-                'available_on_discharge' => false,
-                'display_order'          => 7,
             ],
             [
                 'code'                   => 'authorized_consent',
@@ -108,7 +99,7 @@ class DocumentSeeder extends Seeder
                 'type'                   => 'consent',
                 'is_universal'           => true,
                 'available_on_discharge' => false,
-                'display_order'          => 8,
+                'display_order'          => 7,
             ],
             [
                 'code'                   => 'anesthesia_consent',
@@ -118,7 +109,7 @@ class DocumentSeeder extends Seeder
                 'type'                   => 'consent',
                 'is_universal'           => true,
                 'available_on_discharge' => false,
-                'display_order'          => 9,
+                'display_order'          => 8,
             ],
         ];
 

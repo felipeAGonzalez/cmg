@@ -100,6 +100,21 @@
                     @enderror
                 </div>
 
+                <div class="col-md-6" id="professionalLicenseWrapper"
+                     style="display: {{ in_array(old('role'), ['doctor', 'nurse']) ? 'block' : 'none' }};">
+                    <label for="professional_license" class="form-label fw-semibold">
+                        Cédula profesional <span class="text-danger" id="licenseRequired">*</span>
+                    </label>
+                    <input type="text" id="professional_license" name="professional_license"
+                           class="form-control @error('professional_license') is-invalid @enderror"
+                           value="{{ old('professional_license') }}" maxlength="20"
+                           placeholder="Ej. 12345678 o AB-12345">
+                    @error('professional_license')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                    <small class="text-muted">Aparecerá en la firma de todos los documentos clínicos.</small>
+                </div>
+
                 <div class="col-12" id="specialtyWrapper" style="display:none;">
                     <label class="form-label fw-semibold">Especialidades</label>
                     <div class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
@@ -140,17 +155,26 @@
 @push('scripts')
 <script>
 function toggleSpecialty() {
-    const role    = document.getElementById('role').value;
-    const wrapper = document.getElementById('specialtyWrapper');
+    const role = document.getElementById('role').value;
+    const specialtyWrapper = document.getElementById('specialtyWrapper');
+    const licenseWrapper = document.getElementById('professionalLicenseWrapper');
+    const licenseInput = document.getElementById('professional_license');
 
     if (role === 'doctor') {
-        wrapper.style.display = 'block';
+        specialtyWrapper.style.display = 'block';
     } else {
-        wrapper.style.display = 'none';
-        wrapper.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
+        specialtyWrapper.style.display = 'none';
+        specialtyWrapper.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
+    }
+
+    if (role === 'doctor' || role === 'nurse') {
+        licenseWrapper.style.display = 'block';
+        licenseInput.setAttribute('required', 'required');
+    } else {
+        licenseWrapper.style.display = 'none';
+        licenseInput.removeAttribute('required');
     }
 }
-// Inicializar al cargar (para el caso de old() con errores de validación)
 toggleSpecialty();
 </script>
 @endpush

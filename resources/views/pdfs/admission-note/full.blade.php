@@ -3,6 +3,8 @@
 @section('document-title', 'Nota de Ingreso')
 
 @section('content')
+    <style>@page { margin: 100px 25px 55px 25px; }</style>
+
     @php
         use Carbon\Carbon;
 
@@ -57,7 +59,7 @@
             <td style="padding:3px 6px;" colspan="2">
                 <strong>MÉDICO(S) TRATANTE(S):</strong>
                 @forelse($stay->currentDoctors as $sd)
-                    Dr(a). {{ $sd->doctor?->fullName() ?? '—' }}@if($sd->doctor?->specialtiesLabel()) — {{ $sd->doctor->specialtiesLabel() }}@endif{{ ! $loop->last ? ' · ' : '' }}
+                    Dr(a). {{ $sd->doctor?->fullName() ?? '—' }}@if($sd->doctor?->specialtiesLabel()) — {{ $sd->doctor->specialtiesLabel() }}@endif @if($sd->doctor?->professional_license)(Céd. {{ $sd->doctor->professional_license }})@endif{{ ! $loop->last ? ' · ' : '' }}
                 @empty
                     —
                 @endforelse
@@ -79,7 +81,7 @@
                     <td style="border:1px solid #333; padding:4px 6px; vertical-align:top; white-space:nowrap;">
                         {{ $instruction->created_at->format('d/m/Y') }} <span style="font-size:8px; color:#555;">{{ $instruction->created_at->format('H:i') }}</span>
                     </td>
-                    <td style="border:1px solid #333; padding:4px 6px; vertical-align:top; white-space:pre-wrap;">{{ $instruction->body }}@if($instruction->doctor)<div style="font-size:8px; color:#666; margin-top:2px; text-align:right;">— Dr(a). {{ $instruction->doctor->fullName() }}</div>@endif</td>
+                    <td style="border:1px solid #333; padding:4px 6px; vertical-align:top; white-space:pre-wrap;">{{ $instruction->body }}@if($instruction->doctor)<div style="font-size:8px; color:#666; margin-top:2px; text-align:right;">— Dr(a). {{ $instruction->doctor->fullName() }}@if($instruction->doctor->professional_license) (Céd. {{ $instruction->doctor->professional_license }})@endif</div>@endif</td>
                 </tr>
             @empty
                 <tr>

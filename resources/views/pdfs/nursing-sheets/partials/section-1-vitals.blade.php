@@ -42,7 +42,7 @@
                         <td class="center">{{ $r->temperature ? rtrim(rtrim(number_format($r->temperature, 1), '0'), '.') . '°' : '—' }}</td>
                         @if($hasGlucoseOrders)<td class="center">{{ $glucose?->value_mg_dl ?? '—' }}</td>@endif
                         <td>{{ $r->notes ?: '—' }}</td>
-                        <td>{{ $r->recordedBy?->fullName() ?? '—' }}</td>
+                        <td>{{ $r->recordedBy?->fullName() ?? '—' }}@if($r->recordedBy?->professional_license) <span style="font-size:7px;">(Céd. {{ $r->recordedBy->professional_license }})</span>@endif</td>
                     </tr>
                 @endforeach
             </tbody>
@@ -108,7 +108,7 @@
                         <td style="padding:2px 4px;"><strong>Estudios/operaciones:</strong></td>
                         <td style="padding:2px 4px;">{{ $summary->studies_operations ?: '—' }}</td>
                         <td style="padding:2px 4px;"><strong>Enfermera responsable:</strong></td>
-                        <td style="padding:2px 4px;">{{ $summary->recordedBy?->fullName() ?? '—' }}</td>
+                        <td style="padding:2px 4px;">{{ $summary->recordedBy?->fullName() ?? '—' }}@if($summary->recordedBy?->professional_license) <span style="font-size:7px;">(Céd. {{ $summary->recordedBy->professional_license }})</span>@endif</td>
                     </tr>
                 </table>
             </div>

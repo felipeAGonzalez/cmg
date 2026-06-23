@@ -30,7 +30,6 @@ class UpdateAuthorizedConsentRequest extends FormRequest
             'responsible_address'      => ['nullable', 'string', 'max:500'],
 
             'doctor_name'              => ['required', 'string', 'max:200'],
-            'doctor_cedula'            => ['required', 'string', 'max:50'],
 
             'diagnoses'                => ['nullable', 'array', 'max:2'],
             'diagnoses.*'              => ['nullable', 'string', 'max:500'],
@@ -75,7 +74,6 @@ class UpdateAuthorizedConsentRequest extends FormRequest
             'responsible_name.required'         => 'El nombre del responsable es obligatorio.',
             'responsible_relationship.required' => 'La relación con el paciente es obligatoria.',
             'doctor_name.required'              => 'El nombre del médico es obligatorio.',
-            'doctor_cedula.required'            => 'La cédula profesional del médico es obligatoria.',
             'witness_1_name.required'           => 'El nombre del primer testigo es obligatorio.',
             'witness_2_name.required'           => 'El nombre del segundo testigo es obligatorio.',
             'city.required'                     => 'La ciudad es obligatoria.',

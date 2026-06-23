@@ -23,6 +23,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'professional_license',
         'must_change_password',
         'is_active',
     ];
@@ -71,6 +72,18 @@ class User extends Authenticatable
     public function stayDoctors(): HasMany
     {
         return $this->hasMany(StayDoctor::class, 'doctor_id');
+    }
+
+    public function professionalLicenseLabel(): string
+    {
+        if (!in_array($this->role, ['doctor', 'nurse'])) {
+            return '';
+        }
+        if (empty($this->professional_license)) {
+            return '';
+        }
+
+        return 'Céd. Prof. ' . $this->professional_license;
     }
 
     public function specialties(): BelongsToMany

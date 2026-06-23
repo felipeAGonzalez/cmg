@@ -3,6 +3,8 @@
 @section('document-title', 'Hoja Frontal')
 
 @section('content')
+    <style>@page { margin: 100px 25px 55px 25px; }</style>
+
     @php
         $service      = $formData['service'] ?? null;
         $serviceLabel = $service === 'other'
@@ -87,16 +89,19 @@
     <table class="data-table">
         @forelse($stay->currentDoctors as $stayDoctor)
             <tr>
-                <td style="border: 1px solid #000; width: 60%;">
+                <td style="border: 1px solid #000; width: 40%;">
                     {{ $stayDoctor->doctor?->fullName() ?? '—' }}
                 </td>
-                <td style="border: 1px solid #000; width: 40%;">
+                <td style="border: 1px solid #000; width: 30%;">
                     {{ \App\Enums\DoctorSpecialty::tryFrom($stayDoctor->specialty)?->label() ?? $stayDoctor->specialty }}
+                </td>
+                <td style="border: 1px solid #000; width: 30%;">
+                    {{ $stayDoctor->doctor?->professionalLicenseLabel() ?? '' }}
                 </td>
             </tr>
         @empty
             <tr>
-                <td colspan="2" style="border: 1px solid #000; text-align: center; color: #777;">
+                <td colspan="3" style="border: 1px solid #000; text-align: center; color: #777;">
                     Sin médicos asignados.
                 </td>
             </tr>

@@ -3,6 +3,8 @@
 @section('document-title', '')
 
 @section('content')
+    <style>@page { margin: 100px 25px 55px 25px; }</style>
+
     {{-- Encabezado institucional rosa --}}
     <table style="width:100%; border-collapse:collapse; margin-bottom:4px;">
         <tr>
@@ -328,13 +330,16 @@
         </tr>
     </table>
 
-    <table style="width:100%; font-size:7.5px; margin-top:10px;">
+    <table style="width:100%; font-size:7.5px; margin-top:6px;">
         <tr>
             <td style="width:50%; text-align:center; vertical-align:top; padding:0 10px;">
                 _________________________________<br>
                 <strong>NOMBRE DEL QUE REALIZ&Oacute;</strong>
                 <div style="font-size:7px; color:#555; margin-top:1px;">
                     {{ $triage->performedBy->fullName() ?? '' }}
+                    @if($triage->performedBy?->professional_license)
+                        <br>Céd. {{ $triage->performedBy->professional_license }}
+                    @endif
                 </div>
             </td>
             <td style="width:50%; text-align:center; vertical-align:top; padding:0 10px;">

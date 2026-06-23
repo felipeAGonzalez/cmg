@@ -25,7 +25,7 @@ class EnsureUserHasRole
         $allowed = array_merge(...array_map(fn($r) => explode(',', trim($r)), $roles));
 
         if (! in_array($user->role, $allowed)) {
-            abort(403);
+            return redirect()->route('home');
         }
 
         return $next($request);

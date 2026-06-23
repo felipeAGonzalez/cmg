@@ -49,7 +49,7 @@
                         <td style="padding:2px 4px; width:50%;"><strong>Inicio:</strong> {{ $order->start_date->format('d/m/Y') }}@if($order->duration_days) · <strong>Duración:</strong> {{ $order->duration_days }} día(s)@endif</td>
                     </tr>
                     <tr>
-                        <td colspan="2" style="padding:2px 4px;"><strong>Prescrita por:</strong> Dr(a). {{ $order->prescribedBy?->fullName() ?? '—' }} · <strong>Capturada por:</strong> {{ $order->createdBy?->fullName() ?? '—' }}</td>
+                        <td colspan="2" style="padding:2px 4px;"><strong>Prescrita por:</strong> Dr(a). {{ $order->prescribedBy?->fullName() ?? '—' }}@if($order->prescribedBy?->professional_license) (Céd. {{ $order->prescribedBy->professional_license }})@endif · <strong>Capturada por:</strong> {{ $order->createdBy?->fullName() ?? '—' }}</td>
                     </tr>
                     @if($order->indications)
                         <tr><td colspan="2" style="padding:2px 4px;"><strong>Indicaciones:</strong> {{ $order->indications }}</td></tr>
@@ -74,7 +74,7 @@
                                         <td style="border:1px solid #999; padding:3px;">{{ $a->statusLabel() }}</td>
                                         <td style="border:1px solid #999; padding:3px;">{{ $a->reason ?: '—' }}</td>
                                         <td style="border:1px solid #999; padding:3px;">{{ $a->observations ?: '—' }}</td>
-                                        <td style="border:1px solid #999; padding:3px;">{{ $a->recordedBy?->fullName() ?? '—' }}</td>
+                                        <td style="border:1px solid #999; padding:3px;">{{ $a->recordedBy?->fullName() ?? '—' }}@if($a->recordedBy?->professional_license) <span style="font-size:7px;">(Céd. {{ $a->recordedBy->professional_license }})</span>@endif</td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -90,7 +90,7 @@
                     <span style="float:right; font-size:9px;">{{ $order->statusLabel() }} · {{ $administrations->count() }} administraciones</span>
                 </div>
                 <div style="padding:4px 8px; font-size:9px; background:#FAFAFA;">
-                    {{ $order->routeLabel() }} · {{ $order->frequencyLabel() }} · Inicio {{ $order->start_date->format('d/m/Y') }}@if($order->duration_days) · {{ $order->duration_days }} día(s)@endif · Dr(a). {{ $order->prescribedBy?->fullName() ?? '—' }}
+                    {{ $order->routeLabel() }} · {{ $order->frequencyLabel() }} · Inicio {{ $order->start_date->format('d/m/Y') }}@if($order->duration_days) · {{ $order->duration_days }} día(s)@endif · Dr(a). {{ $order->prescribedBy?->fullName() ?? '—' }}@if($order->prescribedBy?->professional_license) (Céd. {{ $order->prescribedBy->professional_license }})@endif
                     @if($order->indications)
                         <br><em>{{ $order->indications }}</em>
                     @endif
@@ -149,7 +149,7 @@
                             <td class="center">{{ $entry->recorded_at->format('H:i') }}</td>
                             <td>{{ $entry->categoryLabel() }}</td>
                             <td>{{ $entry->description }}</td>
-                            <td>{{ $entry->recordedBy?->fullName() ?? '—' }}</td>
+                            <td>{{ $entry->recordedBy?->fullName() ?? '—' }}@if($entry->recordedBy?->professional_license) <span style="font-size:7px;">(Céd. {{ $entry->recordedBy->professional_license }})</span>@endif</td>
                         </tr>
                     @endforeach
                 </tbody>

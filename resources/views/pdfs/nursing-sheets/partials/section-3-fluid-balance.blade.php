@@ -20,7 +20,7 @@
                 <span class="badge {{ $fbStatusBadge[$order->status()] ?? 'badge-gray' }}" style="float:right;">{{ $order->statusLabel() }}</span>
                 <br>
                 <span style="font-size:8.5px; color:#444;">
-                    Prescrita por Dr(a). {{ $order->prescribedBy?->fullName() ?? '—' }}
+                    Prescrita por Dr(a). {{ $order->prescribedBy?->fullName() ?? '—' }}@if($order->prescribedBy?->professional_license) (Céd. {{ $order->prescribedBy->professional_license }})@endif
                     @if($order->clinical_reason)
                         <br>Motivo clínico: {{ $order->clinical_reason }}
                     @endif
@@ -114,7 +114,7 @@
                     <ul style="margin:2px 0 0; padding-left:16px;">
                         @foreach($withObs as $e)
                             <li>{{ Carbon::parse($e->recorded_at)->format('H:i') }} — {{ $e->observation }}
-                                <span class="muted">({{ $e->recordedBy?->fullName() ?? '—' }})</span></li>
+                                <span class="muted">({{ $e->recordedBy?->fullName() ?? '—' }}@if($e->recordedBy?->professional_license) — Céd. {{ $e->recordedBy->professional_license }}@endif)</span></li>
                         @endforeach
                     </ul>
                 </div>

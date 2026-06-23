@@ -23,6 +23,9 @@ use App\Http\Controllers\ShiftSummaryController;
 use App\Http\Controllers\StayController;
 use App\Http\Controllers\StayDoctorController;
 use App\Http\Controllers\StayMeasurementController;
+use App\Http\Controllers\DischargeNoteController;
+use App\Http\Controllers\MedicalHistoryController;
+use App\Http\Controllers\MedicalTemplateController;
 use App\Http\Controllers\TriageRecordController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WaitingRoomController;
@@ -234,6 +237,33 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
             Route::post('/triage/{triage}/disposition', [TriageRecordController::class, 'updateDisposition'])->name('triage.updateDisposition');
             Route::post('/triage/{triage}/hospitalize', [TriageRecordController::class, 'hospitalize'])->name('triage.hospitalize');
             Route::get('/triage/{triage}/pdf', [TriageRecordController::class, 'pdf'])->name('triage.pdf');
+        });
+
+        // ─── Historia Clínica (admin + doctor + nurse) ────────────────────────
+        Route::middleware('role:admin,doctor,nurse')->group(function () {
+            Route::get('/stays/{stay}/medical-history/edit', [MedicalHistoryController::class, 'edit'])->name('medicalHistory.edit');
+            Route::put('/stays/{stay}/medical-history', [MedicalHistoryController::class, 'update'])->name('medicalHistory.update');
+            Route::get('/stays/{stay}/medical-history/pdf', [MedicalHistoryController::class, 'pdf'])->name('medicalHistory.pdf');
+            Route::get('/medical-templates/{template}/content', [MedicalHistoryController::class, 'templateContent'])->name('medicalTemplates.content');
+        });
+
+        // ─── Nota de Egreso (admin + doctor + nurse) ─────────────────────
+        Route::middleware('role:admin,doctor,nurse')->group(function () {
+            Route::get('/stays/{stay}/discharge-note/edit', [DischargeNoteController::class, 'edit'])->name('dischargeNote.edit');
+            Route::put('/stays/{stay}/discharge-note', [DischargeNoteController::class, 'update'])->name('dischargeNote.update');
+            Route::get('/stays/{stay}/discharge-note/pdf', [DischargeNoteController::class, 'pdf'])->name('dischargeNote.pdf');
+        });
+
+        // ─── Plantillas médicas (admin + doctor) ─────────────────────────────
+        Route::middleware('role:admin,doctor')->group(function () {
+            Route::get('/medical-templates', [MedicalTemplateController::class, 'index'])->name('medicalTemplates.index');
+            Route::get('/medical-templates/create', [MedicalTemplateController::class, 'create'])->name('medicalTemplates.create');
+            Route::post('/medical-templates', [MedicalTemplateController::class, 'store'])->name('medicalTemplates.store');
+            Route::get('/medical-templates/{template}', [MedicalTemplateController::class, 'show'])->name('medicalTemplates.show');
+            Route::get('/medical-templates/{template}/edit', [MedicalTemplateController::class, 'edit'])->name('medicalTemplates.edit');
+            Route::put('/medical-templates/{template}', [MedicalTemplateController::class, 'update'])->name('medicalTemplates.update');
+            Route::post('/medical-templates/{template}/duplicate', [MedicalTemplateController::class, 'duplicate'])->name('medicalTemplates.duplicate');
+            Route::delete('/medical-templates/{template}', [MedicalTemplateController::class, 'destroy'])->name('medicalTemplates.destroy');
         });
 
         // ─── Vista del doctor ────────────────────────────────────────────────

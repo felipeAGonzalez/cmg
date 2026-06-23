@@ -56,7 +56,7 @@
         <td class="label">Médicos asignados</td>
         <td colspan="3">
             @forelse($stay->currentDoctors as $sd)
-                Dr(a). {{ $sd->doctor?->fullName() ?? '—' }}@if($sd->doctor?->specialtiesLabel()) — {{ $sd->doctor->specialtiesLabel() }}@endif{{ ! $loop->last ? '; ' : '' }}
+                Dr(a). {{ $sd->doctor?->fullName() ?? '—' }}@if($sd->doctor?->specialtiesLabel()) — {{ $sd->doctor->specialtiesLabel() }}@endif @if($sd->doctor?->professional_license)(Céd. {{ $sd->doctor->professional_license }})@endif{{ ! $loop->last ? '; ' : '' }}
             @empty
                 <span class="muted">Sin médicos asignados.</span>
             @endforelse
@@ -72,16 +72,16 @@
     </tr>
 </table>
 
-<div class="gen-note">
+<div class="gen-note" style="margin-top:6px;">
     Documento generado el {{ $generatedAt->format('d/m/Y H:i') }} por {{ $generatedBy->fullName() }}.
 </div>
 
 @if(! empty($chartImage))
-    <div style="margin-top:24px; text-align:left; page-break-inside:avoid;">
+    <div style="margin-top:14px; text-align:center; page-break-inside:avoid;">
         <img src="{{ $chartImage }}" alt="Gráfica de signos vitales"
-             width="800" style="display:block; margin-left:-330px;">
-        <p style="font-size:8px; color:#666; margin:4px 0 0 -200px; text-align:left;">
-            Periodo del gráfico: {{ $admissionDate->format('d/m/Y H:i') }} — {{ $endDate->format('d/m/Y H:i') }}
+             style="display:block; width:100%; margin:0 auto;">
+        <p style="font-size:8px; color:#666; margin:4px 0 0; text-align:center;">
+            Periodo del gr&aacute;fico: {{ $admissionDate->format('d/m/Y H:i') }} &mdash; {{ $endDate->format('d/m/Y H:i') }}
         </p>
     </div>
 @endif

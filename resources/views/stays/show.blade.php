@@ -374,6 +374,8 @@
                                     $isFrontSheet        = $doc->code === 'front_sheet';
                                     $isNursingSheets     = $doc->code === 'nursing_sheets';
                                     $isAdmissionNote     = $doc->code === 'admission_note';
+                                    $isMedicalHistory    = $doc->code === 'medical_history';
+                                    $isDischargeNote     = $doc->code === 'discharge_note';
                                     $isAuthorizedConsent = $doc->code === 'authorized_consent';
                                     $isAnesthesiaConsent = $doc->code === 'anesthesia_consent';
                                     $isCompleted         = $sd->status === \App\Models\StayDocument::STATUS_COMPLETED;
@@ -393,6 +395,18 @@
                                         </a>
                                     @elseif($isAdmissionNote)
                                         {{-- La Nota de Ingreso se alimenta de las indicaciones médicas; no tiene formulario propio. --}}
+                                    @elseif($isMedicalHistory)
+                                        @if($stayActive)
+                                            <a href="{{ route('medicalHistory.edit', $stay) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-pencil"></i> {{ $isCompleted ? 'Editar' : 'Llenar' }}
+                                            </a>
+                                        @endif
+                                    @elseif($isDischargeNote)
+                                        @if($stayActive)
+                                            <a href="{{ route('dischargeNote.edit', $stay) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-pencil"></i> {{ $isCompleted ? 'Editar' : 'Llenar' }}
+                                            </a>
+                                        @endif
                                     @elseif($isAuthorizedConsent)
                                         @if($stayActive)
                                             <a href="{{ route('authorizedConsent.edit', $stay) }}" class="btn btn-sm btn-outline-primary">
@@ -435,6 +449,14 @@
                                         </a>
                                     @elseif($isAdmissionNote)
                                         <a href="{{ route('admissionNote.pdf', $stay) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> Ver
+                                        </a>
+                                    @elseif($isMedicalHistory && ($isCompleted || \App\Models\MedicalHistory::where('stay_id', $stay->id)->exists()))
+                                        <a href="{{ route('medicalHistory.pdf', $stay) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> Ver
+                                        </a>
+                                    @elseif($isDischargeNote && ($isCompleted || \App\Models\DischargeNote::where('stay_id', $stay->id)->exists()))
+                                        <a href="{{ route('dischargeNote.pdf', $stay) }}" target="_blank" class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-eye"></i> Ver
                                         </a>
                                     @elseif($isAuthorizedConsent && $isCompleted)

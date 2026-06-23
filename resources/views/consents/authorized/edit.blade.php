@@ -84,13 +84,6 @@
                     @error('doctor_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-md-6">
-                    <label for="doctor_cedula" class="form-label fw-semibold">Cédula profesional</label>
-                    <input type="text" id="doctor_cedula" name="doctor_cedula" maxlength="50"
-                           class="form-control @error('doctor_cedula') is-invalid @enderror"
-                           value="{{ old('doctor_cedula', $formData['doctor_cedula'] ?? '') }}">
-                    @error('doctor_cedula')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-md-6">
                     <label for="folio" class="form-label fw-semibold">Folio <span class="text-muted">(opcional)</span></label>
                     <input type="text" id="folio" name="folio" maxlength="50"
                            class="form-control @error('folio') is-invalid @enderror"

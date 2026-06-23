@@ -103,6 +103,15 @@
                 </li>
                 @endif
 
+                @if(Auth::user()->isAdmin() || Auth::user()->isDoctor())
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('medicalTemplates.*') ? 'active fw-semibold' : '' }}"
+                       href="{{ route('medicalTemplates.index') }}">
+                        <i class="bi bi-journal-text me-1"></i>{{ Auth::user()->isAdmin() ? 'Plantillas' : 'Mis plantillas' }}
+                    </a>
+                </li>
+                @endif
+
             </ul>
 
             <ul class="navbar-nav">

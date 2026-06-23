@@ -115,7 +115,6 @@ class AuthorizedConsentController extends Controller
 
         return [
             'doctor_name'              => $primaryDoctor?->fullName() ?? '',
-            'doctor_cedula'            => '',
 
             'diagnoses'                => [$stay->diagnosis ?? '', ''],
             'benefits'                 => ['', '', ''],

@@ -44,6 +44,7 @@
                         <th>Nombre</th>
                         <th>Correo</th>
                         <th>Rol</th>
+                        <th>Céd. prof.</th>
                         <th class="text-end">Acciones</th>
                     </tr>
                 </thead>
@@ -76,6 +77,7 @@
                                 </span>
                             @endif
                         </td>
+                        <td class="text-muted small">{{ $user->professional_license ?? '—' }}</td>
                         <td class="text-end">
                             <div class="d-flex justify-content-end gap-1">
                                 <a href="{{ route('users.edit', $user) }}"

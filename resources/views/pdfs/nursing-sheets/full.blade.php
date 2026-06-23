@@ -4,6 +4,8 @@
 
 @section('content')
     <style>
+        @page { margin: 100px 25px 60px 25px; }
+
         /* ── Estilos compartidos de las Hojas de Enfermería ── */
         .chapter-title {
             text-align: center;
