@@ -104,11 +104,31 @@
                 @endif
 
                 @if(Auth::user()->isAdmin() || Auth::user()->isDoctor())
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('medicalTemplates.*') ? 'active fw-semibold' : '' }}"
-                       href="{{ route('medicalTemplates.index') }}">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {{ request()->routeIs('medicalHistoryTemplates.*') || request()->routeIs('evolutionTemplates.*') || request()->routeIs('dischargeTemplates.*') ? 'active fw-semibold' : '' }}"
+                       href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-journal-text me-1"></i>{{ Auth::user()->isAdmin() ? 'Plantillas' : 'Mis plantillas' }}
                     </a>
+                    <ul class="dropdown-menu shadow-sm">
+                        <li>
+                            <a class="dropdown-item {{ request()->routeIs('medicalHistoryTemplates.*') ? 'active' : '' }}"
+                               href="{{ route('medicalHistoryTemplates.index') }}">
+                                <i class="bi bi-clipboard-pulse me-1"></i> Plantillas de Historia Clínica
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {{ request()->routeIs('evolutionTemplates.*') ? 'active' : '' }}"
+                               href="{{ route('evolutionTemplates.index') }}">
+                                <i class="bi bi-arrow-up-right-circle me-1"></i> Plantillas de Evolución
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {{ request()->routeIs('dischargeTemplates.*') ? 'active' : '' }}"
+                               href="{{ route('dischargeTemplates.index') }}">
+                                <i class="bi bi-box-arrow-right me-1"></i> Plantillas de Alta
+                            </a>
+                        </li>
+                    </ul>
                 </li>
                 @endif
 

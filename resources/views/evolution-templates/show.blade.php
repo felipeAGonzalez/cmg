@@ -9,26 +9,23 @@
                 <p class="text-muted mb-0">{{ $template->description }}</p>
             @endif
             <p class="text-muted small mb-0">
-                Due&ntilde;o: {{ $template->owner->name }}
+                Dueño: {{ $template->owner->name }}
                 &middot; Actualizado: {{ $template->updated_at->format('d/m/Y H:i') }}
             </p>
         </div>
         <div class="d-flex gap-2">
             @if($template->owner_id === auth()->id())
-                <a href="{{ route('medicalTemplates.edit', $template) }}"
-                   class="btn btn-outline-primary">
+                <a href="{{ route('evolutionTemplates.edit', $template) }}" class="btn btn-outline-primary">
                     <i class="bi bi-pencil"></i> Editar
                 </a>
-                <form method="POST"
-                      action="{{ route('medicalTemplates.duplicate', $template) }}"
-                      class="d-inline">
+                <form method="POST" action="{{ route('evolutionTemplates.duplicate', $template) }}" class="d-inline">
                     @csrf
                     <button type="submit" class="btn btn-outline-secondary">
                         <i class="bi bi-files"></i> Duplicar
                     </button>
                 </form>
             @endif
-            <a href="{{ route('medicalTemplates.index') }}" class="btn btn-outline-secondary">
+            <a href="{{ route('evolutionTemplates.index') }}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Volver
             </a>
         </div>
@@ -45,17 +42,13 @@
         @php $content = $template->{$key}; @endphp
         <div class="card mb-3">
             <div class="card-header">
-                <h6 class="mb-0">
-                    {{ $section['order'] }}. {{ $section['label'] }}
-                </h6>
+                <h6 class="mb-0">{{ $loop->iteration }}. {{ $section['label'] }}</h6>
             </div>
             <div class="card-body">
                 @if(!empty(trim($content ?? '')))
-                    <div style="white-space: pre-wrap;">{{ $content }}</div>
+                    <div style="white-space:pre-wrap;">{{ $content }}</div>
                 @else
-                    <p class="text-muted small mb-0">
-                        <em>Sin contenido en esta secci&oacute;n.</em>
-                    </p>
+                    <p class="text-muted small mb-0"><em>Sin contenido en esta sección.</em></p>
                 @endif
             </div>
         </div>

@@ -8,17 +8,12 @@ class DischargeNote extends Model
 {
     protected $fillable = [
         'stay_id',
-        'family_history',
-        'non_pathological_history',
-        'pathological_history',
-        'current_illness',
-        'general_symptoms',
-        'physical_examination',
-        'diagnostic_aids',
-        'main_diagnoses',
-        'comorbidities',
-        'clinical_plan',
-        'signature_block',
+        'admission_diagnosis',
+        'discharge_diagnosis',
+        'clinical_summary',
+        'physical_examination_at_discharge',
+        'plan_and_treatment_at_discharge',
+        'prognosis',
         'attending_doctor_id',
         'created_by_id',
         'updated_by_id',
@@ -47,17 +42,12 @@ class DischargeNote extends Model
     public function sections(): array
     {
         return [
-            'family_history' => $this->family_history,
-            'non_pathological_history' => $this->non_pathological_history,
-            'pathological_history' => $this->pathological_history,
-            'current_illness' => $this->current_illness,
-            'general_symptoms' => $this->general_symptoms,
-            'physical_examination' => $this->physical_examination,
-            'diagnostic_aids' => $this->diagnostic_aids,
-            'main_diagnoses' => $this->main_diagnoses,
-            'comorbidities' => $this->comorbidities,
-            'clinical_plan' => $this->clinical_plan,
-            'signature_block' => $this->signature_block,
+            'admission_diagnosis'              => $this->admission_diagnosis,
+            'discharge_diagnosis'              => $this->discharge_diagnosis,
+            'clinical_summary'                 => $this->clinical_summary,
+            'physical_examination_at_discharge' => $this->physical_examination_at_discharge,
+            'plan_and_treatment_at_discharge'  => $this->plan_and_treatment_at_discharge,
+            'prognosis'                        => $this->prognosis,
         ];
     }
 
@@ -68,24 +58,36 @@ class DischargeNote extends Model
             ->count();
     }
 
+    public function isComplete(): bool
+    {
+        return $this->filledSectionsCount() === 6;
+    }
+
+    public function pendingSections(): array
+    {
+        $sectionConfigs = config('discharge_template_sections', []);
+        $pending = [];
+
+        foreach ($this->sections() as $key => $content) {
+            if (empty(trim($content ?? ''))) {
+                $pending[] = $sectionConfigs[$key]['label'] ?? $key;
+            }
+        }
+
+        return $pending;
+    }
+
     public function effectiveSignatureBlock(): string
     {
-        if (!empty(trim($this->signature_block ?? ''))) {
-            return $this->signature_block;
-        }
-
         $doctor = $this->attendingDoctor;
-        if (!$doctor) {
-            return '';
-        }
+        if (!$doctor) return '';
 
         $parts = [];
-
         $parts[] = trim('Dr(a). ' . $doctor->name . ' ' .
             ($doctor->last_name_one ?? '') . ' ' .
             ($doctor->last_name_two ?? ''));
 
-        if ($doctor->specialtiesLabel()) {
+        if (method_exists($doctor, 'specialtiesLabel') && $doctor->specialtiesLabel()) {
             $parts[] = $doctor->specialtiesLabel();
         }
 

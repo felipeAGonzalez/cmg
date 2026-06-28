@@ -25,7 +25,11 @@ use App\Http\Controllers\StayDoctorController;
 use App\Http\Controllers\StayMeasurementController;
 use App\Http\Controllers\DischargeNoteController;
 use App\Http\Controllers\MedicalHistoryController;
-use App\Http\Controllers\MedicalTemplateController;
+use App\Http\Controllers\TransfusionChecklistController;
+use App\Http\Controllers\EvolutionNoteController;
+use App\Http\Controllers\MedicalHistoryTemplateController;
+use App\Http\Controllers\EvolutionTemplateController;
+use App\Http\Controllers\DischargeTemplateController;
 use App\Http\Controllers\TriageRecordController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WaitingRoomController;
@@ -62,6 +66,7 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
             Route::post('/rooms/{room}/birth', [StayController::class, 'storeBirth'])->name('stays.storeBirth');
             Route::get('/rooms/{room}/patient', [StayController::class, 'show'])->name('stays.show');
             Route::post('/stays/{stay}/discharge', [StayController::class, 'discharge'])->name('stays.discharge');
+
 
             Route::get('/patients/{patient}/edit', [PatientController::class, 'edit'])->name('patients.edit');
             Route::put('/patients/{patient}', [PatientController::class, 'update'])->name('patients.update');
@@ -244,33 +249,92 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
             Route::get('/stays/{stay}/medical-history/edit', [MedicalHistoryController::class, 'edit'])->name('medicalHistory.edit');
             Route::put('/stays/{stay}/medical-history', [MedicalHistoryController::class, 'update'])->name('medicalHistory.update');
             Route::get('/stays/{stay}/medical-history/pdf', [MedicalHistoryController::class, 'pdf'])->name('medicalHistory.pdf');
-            Route::get('/medical-templates/{template}/content', [MedicalHistoryController::class, 'templateContent'])->name('medicalTemplates.content');
+            Route::get('/medical-history-templates/{template}/content', [MedicalHistoryTemplateController::class, 'content'])->name('medicalHistoryTemplates.content');
         });
 
-        // ─── Nota de Egreso (admin + doctor + nurse) ─────────────────────
+        // ─── Nota de Alta (admin + doctor + nurse) ────────────────────────
         Route::middleware('role:admin,doctor,nurse')->group(function () {
             Route::get('/stays/{stay}/discharge-note/edit', [DischargeNoteController::class, 'edit'])->name('dischargeNote.edit');
             Route::put('/stays/{stay}/discharge-note', [DischargeNoteController::class, 'update'])->name('dischargeNote.update');
             Route::get('/stays/{stay}/discharge-note/pdf', [DischargeNoteController::class, 'pdf'])->name('dischargeNote.pdf');
+            Route::delete('/stays/{stay}/discharge-note', [DischargeNoteController::class, 'destroy'])->name('dischargeNote.destroy');
+        });
+
+        // ─── Notas de Evolución (admin + doctor + nurse) ──────────────────────
+        Route::middleware('role:admin,doctor,nurse')->group(function () {
+            Route::get('/stays/{stay}/evolution-notes', [EvolutionNoteController::class, 'index'])->name('evolutionNotes.index');
+            Route::get('/stays/{stay}/evolution-notes/create', [EvolutionNoteController::class, 'create'])->name('evolutionNotes.create');
+            Route::post('/stays/{stay}/evolution-notes', [EvolutionNoteController::class, 'store'])->name('evolutionNotes.store');
+            Route::get('/evolution-notes/{note}', [EvolutionNoteController::class, 'show'])->name('evolutionNotes.show');
+            Route::get('/evolution-notes/{note}/edit', [EvolutionNoteController::class, 'edit'])->name('evolutionNotes.edit');
+            Route::put('/evolution-notes/{note}', [EvolutionNoteController::class, 'update'])->name('evolutionNotes.update');
+            Route::get('/evolution-notes/{note}/pdf', [EvolutionNoteController::class, 'pdf'])->name('evolutionNotes.pdf');
+            Route::delete('/evolution-notes/{note}', [EvolutionNoteController::class, 'destroy'])->name('evolutionNotes.destroy');
+        });
+
+        // ─── Transfusiones (admin + doctor + nurse) ────────────────────────
+        Route::middleware('role:admin,doctor,nurse')->group(function () {
+            Route::get('/stays/{stay}/transfusion-checklists', [TransfusionChecklistController::class, 'index'])->name('transfusionChecklists.index');
+            Route::get('/stays/{stay}/transfusion-checklists/create', [TransfusionChecklistController::class, 'create'])->name('transfusionChecklists.create');
+            Route::post('/stays/{stay}/transfusion-checklists', [TransfusionChecklistController::class, 'store'])->name('transfusionChecklists.store');
+            Route::get('/transfusion-checklists/{checklist}', [TransfusionChecklistController::class, 'show'])->name('transfusionChecklists.show');
+            Route::get('/transfusion-checklists/{checklist}/edit', [TransfusionChecklistController::class, 'edit'])->name('transfusionChecklists.edit');
+            Route::put('/transfusion-checklists/{checklist}', [TransfusionChecklistController::class, 'update'])->name('transfusionChecklists.update');
+            Route::post('/transfusion-checklists/{checklist}/finalize', [TransfusionChecklistController::class, 'finalize'])->name('transfusionChecklists.finalize');
+            Route::get('/transfusion-checklists/{checklist}/pdf', [TransfusionChecklistController::class, 'pdf'])->name('transfusionChecklists.pdf');
+            Route::delete('/transfusion-checklists/{checklist}', [TransfusionChecklistController::class, 'destroy'])->name('transfusionChecklists.destroy');
         });
 
         // ─── Plantillas médicas (admin + doctor) ─────────────────────────────
         Route::middleware('role:admin,doctor')->group(function () {
-            Route::get('/medical-templates', [MedicalTemplateController::class, 'index'])->name('medicalTemplates.index');
-            Route::get('/medical-templates/create', [MedicalTemplateController::class, 'create'])->name('medicalTemplates.create');
-            Route::post('/medical-templates', [MedicalTemplateController::class, 'store'])->name('medicalTemplates.store');
-            Route::get('/medical-templates/{template}', [MedicalTemplateController::class, 'show'])->name('medicalTemplates.show');
-            Route::get('/medical-templates/{template}/edit', [MedicalTemplateController::class, 'edit'])->name('medicalTemplates.edit');
-            Route::put('/medical-templates/{template}', [MedicalTemplateController::class, 'update'])->name('medicalTemplates.update');
-            Route::post('/medical-templates/{template}/duplicate', [MedicalTemplateController::class, 'duplicate'])->name('medicalTemplates.duplicate');
-            Route::delete('/medical-templates/{template}', [MedicalTemplateController::class, 'destroy'])->name('medicalTemplates.destroy');
+            // Historia Clínica
+            Route::get('/medical-history-templates', [MedicalHistoryTemplateController::class, 'index'])->name('medicalHistoryTemplates.index');
+            Route::get('/medical-history-templates/create', [MedicalHistoryTemplateController::class, 'create'])->name('medicalHistoryTemplates.create');
+            Route::post('/medical-history-templates', [MedicalHistoryTemplateController::class, 'store'])->name('medicalHistoryTemplates.store');
+            Route::get('/medical-history-templates/{template}', [MedicalHistoryTemplateController::class, 'show'])->name('medicalHistoryTemplates.show');
+            Route::get('/medical-history-templates/{template}/edit', [MedicalHistoryTemplateController::class, 'edit'])->name('medicalHistoryTemplates.edit');
+            Route::put('/medical-history-templates/{template}', [MedicalHistoryTemplateController::class, 'update'])->name('medicalHistoryTemplates.update');
+            Route::post('/medical-history-templates/{template}/duplicate', [MedicalHistoryTemplateController::class, 'duplicate'])->name('medicalHistoryTemplates.duplicate');
+            Route::delete('/medical-history-templates/{template}', [MedicalHistoryTemplateController::class, 'destroy'])->name('medicalHistoryTemplates.destroy');
+
+            // Evolución
+            Route::get('/evolution-templates', [EvolutionTemplateController::class, 'index'])->name('evolutionTemplates.index');
+            Route::get('/evolution-templates/create', [EvolutionTemplateController::class, 'create'])->name('evolutionTemplates.create');
+            Route::post('/evolution-templates', [EvolutionTemplateController::class, 'store'])->name('evolutionTemplates.store');
+            Route::get('/evolution-templates/{template}', [EvolutionTemplateController::class, 'show'])->name('evolutionTemplates.show');
+            Route::get('/evolution-templates/{template}/edit', [EvolutionTemplateController::class, 'edit'])->name('evolutionTemplates.edit');
+            Route::put('/evolution-templates/{template}', [EvolutionTemplateController::class, 'update'])->name('evolutionTemplates.update');
+            Route::post('/evolution-templates/{template}/duplicate', [EvolutionTemplateController::class, 'duplicate'])->name('evolutionTemplates.duplicate');
+            Route::delete('/evolution-templates/{template}', [EvolutionTemplateController::class, 'destroy'])->name('evolutionTemplates.destroy');
+            Route::get('/evolution-templates/{template}/content', [EvolutionTemplateController::class, 'content'])->name('evolutionTemplates.content');
+
+            // Alta
+            Route::get('/discharge-templates', [DischargeTemplateController::class, 'index'])->name('dischargeTemplates.index');
+            Route::get('/discharge-templates/create', [DischargeTemplateController::class, 'create'])->name('dischargeTemplates.create');
+            Route::post('/discharge-templates', [DischargeTemplateController::class, 'store'])->name('dischargeTemplates.store');
+            Route::get('/discharge-templates/{template}', [DischargeTemplateController::class, 'show'])->name('dischargeTemplates.show');
+            Route::get('/discharge-templates/{template}/edit', [DischargeTemplateController::class, 'edit'])->name('dischargeTemplates.edit');
+            Route::put('/discharge-templates/{template}', [DischargeTemplateController::class, 'update'])->name('dischargeTemplates.update');
+            Route::post('/discharge-templates/{template}/duplicate', [DischargeTemplateController::class, 'duplicate'])->name('dischargeTemplates.duplicate');
+            Route::delete('/discharge-templates/{template}', [DischargeTemplateController::class, 'destroy'])->name('dischargeTemplates.destroy');
+            Route::get('/discharge-templates/{template}/content', [DischargeTemplateController::class, 'content'])->name('dischargeTemplates.content');
         });
 
-        // ─── Vista del doctor ────────────────────────────────────────────────
-        Route::middleware('role:doctor')->group(function () {
+        // ─── Vista de pacientes (doctor + admin + nurse) ─────────────────────
+        Route::middleware('role:admin,doctor,nurse')->group(function () {
             Route::get('/my-patients', [DoctorController::class, 'index'])->name('doctor.myPatients');
             Route::get('/my-patients/{stay}', [DoctorController::class, 'show'])->name('doctor.patientDetail');
+        });
+
+        // ─── Instrucciones de médico ─────────────────────────────────────────
+        Route::middleware('role:doctor')->group(function () {
             Route::post('/my-patients/{stay}/instructions', [DoctorController::class, 'storeInstruction'])->name('doctor.storeInstruction');
+        });
+
+        // ─── Indicar / revertir alta (admin + doctor) ───────────────────────
+        Route::middleware('role:admin,doctor')->group(function () {
+            Route::post('/stays/{stay}/indicate-discharge', [StayController::class, 'indicateDischarge'])->name('stays.indicateDischarge');
+            Route::post('/stays/{stay}/revert-discharge-indication', [StayController::class, 'revertDischargeIndication'])->name('stays.revertDischargeIndication');
         });
     });
 

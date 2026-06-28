@@ -77,57 +77,6 @@
         @endif
     @endforeach
 
-    @if($instructions->isNotEmpty())
-        <div style="page-break-before:always;">
-            <div style="background-color:#E91E63; color:white;
-                        padding:5px 10px; margin-bottom:10px;
-                        font-weight:bold; text-align:center; font-size:11px;">
-                ANEXO: INDICACIONES MÉDICAS
-            </div>
-
-            <table style="width:100%; border:1px solid #333; border-collapse:collapse;
-                          font-size:9px;">
-                <thead>
-                    <tr style="background-color:#E8E8F0;">
-                        <th style="border:1px solid #333; padding:4px; width:18%;
-                                   text-align:center;">
-                            FECHA Y HORA
-                        </th>
-                        <th style="border:1px solid #333; padding:4px; text-align:center;">
-                            INDICACIÓN MÉDICA
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($instructions as $instruction)
-                        <tr>
-                            <td style="border:1px solid #333; padding:4px 6px;
-                                       vertical-align:top; white-space:nowrap;">
-                                {{ $instruction->created_at->format('d/m/Y') }}<br>
-                                <span style="font-size:8px; color:#555;">
-                                    {{ $instruction->created_at->format('H:i') }}
-                                </span>
-                            </td>
-                            <td style="border:1px solid #333; padding:4px 6px;
-                                       vertical-align:top; white-space:pre-wrap;">{{ $instruction->body }}
-                                @if($instruction->doctor)
-                                    <div style="font-size:8px; color:#666;
-                                                margin-top:2px; text-align:right;">
-                                        — Dr(a). {{ $instruction->doctor->name }}
-                                        {{ $instruction->doctor->last_name_one ?? '' }}
-                                        @if($instruction->doctor->professional_license)
-                                            (Céd. {{ $instruction->doctor->professional_license }})
-                                        @endif
-                                    </div>
-                                @endif
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    @endif
-
     <div style="margin-top:30px; font-size:9px;">
         <div style="text-align:center; border-top:1px solid #333;
                     padding-top:5px; width:60%; margin:0 auto;

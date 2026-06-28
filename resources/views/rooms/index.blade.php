@@ -32,6 +32,21 @@
         </div>
     </div>
 
+    {{-- Filtros de estado --}}
+    <div class="d-flex gap-2 mb-3 flex-wrap align-items-center">
+        <a href="{{ route('rooms.index', $search ? ['search' => $search] : []) }}"
+           class="btn btn-sm {{ $filter === 'all' ? 'btn-primary' : 'btn-outline-primary' }}">
+            <i class="bi bi-grid me-1"></i> Todos
+        </a>
+        <a href="{{ route('rooms.index', array_filter(['filter' => 'discharge_pending', 'search' => $search])) }}"
+           class="btn btn-sm {{ $filter === 'discharge_pending' ? 'btn-warning' : 'btn-outline-warning' }}">
+            <i class="bi bi-clock-history me-1"></i> Altas pendientes
+            @if($dischargePendingCount > 0)
+                <span class="badge bg-danger ms-1">{{ $dischargePendingCount }}</span>
+            @endif
+        </a>
+    </div>
+
     {{-- Búsqueda --}}
     <form method="GET" action="{{ route('rooms.index') }}" class="mb-4">
         <div class="input-group shadow-sm">
@@ -83,8 +98,21 @@
                             @endif
                         </div>
                         @foreach($room->currentStays as $cs)
-                        <div class="text-muted mt-1" style="font-size:.78rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                            @if($cs->isBirth())<i class="bi bi-balloon-heart text-danger"></i> @endif{{ $cs->patient->fullName() }}
+                        <div class="text-muted mt-1" style="font-size:.78rem;">
+                            <div class="d-flex align-items-center justify-content-center gap-1 flex-wrap">
+                                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%;">
+                                    @if($cs->isBirth())<i class="bi bi-balloon-heart text-danger"></i> @endif{{ $cs->patient->fullName() }}
+                                </span>
+                                @if($cs->hasDischargeIndicated())
+                                    <span class="badge bg-warning text-dark"
+                                          data-bs-toggle="tooltip"
+                                          data-bs-placement="top"
+                                          title="{{ $cs->dischargeIndicatedTooltip() }}"
+                                          onclick="event.stopPropagation()">
+                                        <i class="bi bi-clock-history"></i> Alta indicada
+                                    </span>
+                                @endif
+                            </div>
                         </div>
                         @endforeach
                     @endif
@@ -163,4 +191,14 @@
     box-shadow: 0 8px 24px rgba(0,0,0,.12) !important;
 }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+(function () {
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+        new bootstrap.Tooltip(el);
+    });
+})();
+</script>
 @endpush

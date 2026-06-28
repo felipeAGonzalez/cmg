@@ -28,7 +28,7 @@ class MedicationOrderController extends Controller
         $stay->load(['patient', 'room', 'currentDoctors.doctor']);
 
         $orders = MedicationOrder::forStay($stay->id)
-            ->with(['prescribedBy', 'createdBy', 'updatedBy', 'suspendedBy'])
+            ->with(['prescribedBy', 'createdBy', 'updatedBy', 'suspendedBy', 'administrations.recordedBy'])
             ->orderByDesc('created_at')
             ->get();
 

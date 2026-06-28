@@ -12,24 +12,19 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2>
-                <i class="bi bi-journal-text"></i>
-                @if($isAdmin)
-                    Plantillas (todas)
-                @else
-                    Mis plantillas
-                @endif
+                <i class="bi bi-clipboard-pulse"></i>
+                @if($isAdmin) Plantillas de Historia Clínica (todas) @else Mis plantillas de Historia Clínica @endif
             </h2>
             <p class="text-muted mb-0">
                 @if($isAdmin)
-                    Vista de auditor&iacute;a: puedes ver todas las plantillas pero solo eliminar.
+                    Vista de auditoría: puedes ver todas las plantillas pero solo eliminar.
                 @else
-                    Plantillas reutilizables de historia cl&iacute;nica. Cada plantilla guarda
-                    secciones que despu&eacute;s usas como base al crear una historia nueva.
+                    Plantillas reutilizables para la Historia Clínica. Cada plantilla guarda secciones que usas como base al crear una historia nueva.
                 @endif
             </p>
         </div>
         @if(!$isAdmin)
-            <a href="{{ route('medicalTemplates.create') }}" class="btn btn-primary">
+            <a href="{{ route('medicalHistoryTemplates.create') }}" class="btn btn-primary">
                 <i class="bi bi-plus-circle"></i> Nueva plantilla
             </a>
         @endif
@@ -37,16 +32,12 @@
 
     @if($templates->isEmpty())
         <div class="text-center py-5 text-muted">
-            <i class="bi bi-journal" style="font-size:3rem;"></i>
+            <i class="bi bi-clipboard-pulse" style="font-size:3rem;"></i>
             @if($isAdmin)
-                <p class="mt-3">No hay plantillas creadas en el sistema.</p>
+                <p class="mt-3">No hay plantillas de Historia Clínica en el sistema.</p>
             @else
-                <p class="mt-3">No tienes plantillas todav&iacute;a.</p>
-                <p>
-                    <a href="{{ route('medicalTemplates.create') }}" class="btn btn-primary">
-                        Crear mi primera plantilla
-                    </a>
-                </p>
+                <p class="mt-3">No tienes plantillas de Historia Clínica todavía.</p>
+                <p><a href="{{ route('medicalHistoryTemplates.create') }}" class="btn btn-primary">Crear mi primera plantilla</a></p>
             @endif
         </div>
     @else
@@ -56,55 +47,34 @@
                     <div class="card h-100">
                         <div class="card-body d-flex flex-column">
                             <h5 class="card-title mb-1">{{ $template->name }}</h5>
-
                             @if($isAdmin && $template->owner_id !== auth()->id())
-                                <small class="text-muted mb-2">
-                                    <i class="bi bi-person"></i> {{ $template->owner->name }}
-                                </small>
+                                <small class="text-muted mb-2"><i class="bi bi-person"></i> {{ $template->owner->name }}</small>
                             @endif
-
                             @if($template->description)
-                                <p class="text-muted small mb-2">
-                                    {{ $template->description }}
-                                </p>
+                                <p class="text-muted small mb-2">{{ $template->description }}</p>
                             @endif
-
                             <p class="text-muted small mb-3">
                                 <i class="bi bi-list-check"></i>
                                 {{ $template->filledSectionsCount() }} de 11 secciones con contenido
                             </p>
-
-                            <div class="text-muted small mb-3">
-                                &Uacute;ltima actualizaci&oacute;n:
-                                {{ $template->updated_at->format('d/m/Y H:i') }}
-                            </div>
-
+                            <div class="text-muted small mb-3">Última actualización: {{ $template->updated_at->format('d/m/Y H:i') }}</div>
                             <div class="mt-auto d-flex gap-1 flex-wrap">
-                                <a href="{{ route('medicalTemplates.show', $template) }}"
-                                   class="btn btn-sm btn-outline-secondary">
+                                <a href="{{ route('medicalHistoryTemplates.show', $template) }}" class="btn btn-sm btn-outline-secondary">
                                     <i class="bi bi-eye"></i> Ver
                                 </a>
-
                                 @if($template->owner_id === auth()->id())
-                                    <a href="{{ route('medicalTemplates.edit', $template) }}"
-                                       class="btn btn-sm btn-outline-primary">
+                                    <a href="{{ route('medicalHistoryTemplates.edit', $template) }}" class="btn btn-sm btn-outline-primary">
                                         <i class="bi bi-pencil"></i> Editar
                                     </a>
-
-                                    <form method="POST"
-                                          action="{{ route('medicalTemplates.duplicate', $template) }}"
-                                          class="d-inline">
+                                    <form method="POST" action="{{ route('medicalHistoryTemplates.duplicate', $template) }}" class="d-inline">
                                         @csrf
                                         <button type="submit" class="btn btn-sm btn-outline-secondary">
                                             <i class="bi bi-files"></i> Duplicar
                                         </button>
                                     </form>
                                 @endif
-
                                 @if($template->owner_id === auth()->id() || auth()->user()->isAdmin())
-                                    <form method="POST"
-                                          action="{{ route('medicalTemplates.destroy', $template) }}"
-                                          class="d-inline"
+                                    <form method="POST" action="{{ route('medicalHistoryTemplates.destroy', $template) }}" class="d-inline"
                                           onsubmit="return confirm('¿Eliminar esta plantilla? Esta acción no se puede deshacer.');">
                                         @csrf
                                         @method('DELETE')

@@ -20,13 +20,16 @@ class Stay extends Model
         'admission_date',
         'discharge_date',
         'discharge_reason',
+        'discharge_indicated_at',
+        'discharge_indicated_by_id',
     ];
 
     protected function casts(): array
     {
         return [
-            'admission_date' => 'datetime',
-            'discharge_date' => 'datetime',
+            'admission_date'         => 'datetime',
+            'discharge_date'         => 'datetime',
+            'discharge_indicated_at' => 'datetime',
         ];
     }
 
@@ -59,6 +62,35 @@ class Stay extends Model
         }
 
         return config('discharge_reasons')[$this->discharge_reason] ?? $this->discharge_reason;
+    }
+
+    public function dischargeIndicatedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'discharge_indicated_by_id');
+    }
+
+    public function hasDischargeIndicated(): bool
+    {
+        return $this->discharge_indicated_at !== null
+            && $this->discharge_date === null;
+    }
+
+    public function dischargeIndicatedTooltip(): string
+    {
+        if (! $this->hasDischargeIndicated()) {
+            return '';
+        }
+
+        $by = $this->dischargeIndicatedBy?->name ?? 'Médico';
+        $at = $this->discharge_indicated_at->format('d/m/Y H:i');
+
+        return "Alta indicada por Dr(a). {$by} el {$at}";
+    }
+
+    public function scopeWithDischargeIndicated(Builder $query): Builder
+    {
+        return $query->whereNotNull('discharge_indicated_at')
+            ->whereNull('discharge_date');
     }
 
     /** True si esta estancia es un recién nacido ligado a una madre. */

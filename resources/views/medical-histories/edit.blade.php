@@ -192,7 +192,7 @@
         statusEl.className = 'small text-muted mt-2';
         loadBtn.disabled = true;
 
-        fetch('/medical-templates/' + templateId + '/content', {
+        fetch('/medical-history-templates/' + templateId + '/content', {
             headers: { 'Accept': 'application/json' }
         })
         .then(function(r) {

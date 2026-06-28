@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UpdateMedicalHistoryRequest;
 use App\Models\Document;
 use App\Models\MedicalHistory;
-use App\Models\MedicalTemplate;
+use App\Models\MedicalHistoryTemplate;
 use App\Models\Stay;
 use App\Models\StayDocument;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -26,7 +26,7 @@ class MedicalHistoryController extends Controller
         $history = MedicalHistory::firstOrNew(['stay_id' => $stay->id]);
 
         $user = auth()->user();
-        $templatesQuery = MedicalTemplate::query()->with('owner');
+        $templatesQuery = MedicalHistoryTemplate::query()->with('owner');
 
         if ($user->isDoctor()) {
             $templatesQuery->where('owner_id', $user->id);
@@ -102,16 +102,10 @@ class MedicalHistoryController extends Controller
         $stay->load(['patient', 'room', 'currentDoctors.doctor.specialties']);
         $history->load('attendingDoctor.specialties');
 
-        $instructions = $stay->instructions()
-            ->with('doctor')
-            ->reorder('created_at', 'asc')
-            ->get();
-
         $pdf = Pdf::loadView('pdfs.medical-history.full', [
             'stay' => $stay,
             'patient' => $stay->patient,
             'history' => $history,
-            'instructions' => $instructions,
             'sections' => config('medical_template_sections'),
             'generatedAt' => now(),
         ])
@@ -130,7 +124,7 @@ class MedicalHistoryController extends Controller
         return $pdf->stream($filename);
     }
 
-    public function templateContent(MedicalTemplate $template)
+    public function templateContent(MedicalHistoryTemplate $template)
     {
         $user = auth()->user();
 

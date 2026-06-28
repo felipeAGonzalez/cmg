@@ -73,8 +73,8 @@ class DocumentSeeder extends Seeder
             ],
             [
                 'code'                   => 'discharge_note',
-                'name'                   => 'Nota de Egreso',
-                'description'            => 'Resumen clínico al alta del paciente.',
+                'name'                   => 'Nota de Alta',
+                'description'            => 'Documento de cierre clínico al alta del paciente.',
                 'icon'                   => 'bi-box-arrow-right',
                 'type'                   => 'medical_note',
                 'is_universal'           => true,

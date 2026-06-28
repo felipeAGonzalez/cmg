@@ -35,10 +35,10 @@ class AdmissionNotePdfController extends Controller
             'currentDoctors.doctor.specialties',
         ]);
 
-        // Indicaciones médicas ordenadas cronológicamente (más antigua primero).
-        // La relación instructions() viene con ->latest(); reordenamos ascendente.
+        // Solo indicaciones del día de admisión (día 1 de la estancia).
         $instructions = $stay->instructions()
             ->with('doctor')
+            ->whereDate('created_at', $stay->admission_date->toDateString())
             ->reorder('created_at', 'asc')
             ->get();
 

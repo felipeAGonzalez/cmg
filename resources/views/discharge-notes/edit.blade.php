@@ -1,90 +1,102 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container py-4">
-    <div class="d-flex align-items-center mb-4">
-        <a href="{{ route('stays.show', ['room' => $stay->room_id]) }}"
-           class="btn btn-sm btn-outline-secondary me-3">
+<div class="container py-4" style="max-width:900px;">
+
+    <div class="d-flex align-items-center mb-4 gap-3">
+        <a href="{{ route('stays.show', $stay) }}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-arrow-left"></i> Volver
         </a>
-        <div>
-            <h2 class="mb-0">Nota de Egreso</h2>
-            <p class="text-muted mb-0">
+        <div class="flex-grow-1">
+            <h2 class="mb-0">
+                <i class="bi bi-box-arrow-right me-2" style="color:#E91E63;"></i>Nota de Alta
+            </h2>
+            <p class="text-muted mb-0 small">
                 Paciente: <strong>{{ $patient->fullName() }}</strong>
-                @if($patient->birth_date)
-                    &middot; {{ $patient->birth_date->age }} a&ntilde;os
+                @if($stay->discharge_date !== null)
+                    &middot;
+                    <span class="badge bg-secondary">
+                        Alta el {{ $stay->discharge_date->format('d/m/Y H:i') }}
+                    </span>
                 @endif
-                &middot; Cuarto {{ $stay->room->number ?? '—' }}
             </p>
         </div>
+        @if($note->exists)
+            <form method="POST" action="{{ route('dischargeNote.destroy', $stay) }}"
+                  onsubmit="return confirm('¿Eliminar la Nota de Alta? Esta acción no se puede deshacer.');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-trash"></i> Eliminar
+                </button>
+            </form>
+        @endif
     </div>
 
     @if($errors->any())
-        <div class="alert alert-danger">
-            <strong>Hay errores en el formulario:</strong>
+        <div class="alert alert-danger alert-dismissible fade show">
             <ul class="mb-0">
                 @foreach($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
             </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
 
-    <div class="card mb-3">
-        <div class="card-header">
-            <h6 class="mb-0">Datos del paciente (auto-rellenados)</h6>
-        </div>
-        <div class="card-body">
-            <div class="row g-2 small">
-                <div class="col-md-6">
-                    <strong>Nombre:</strong> {{ $patient->fullName() }}
-                </div>
+    {{-- Datos del paciente --}}
+    <div class="card mb-3 border-0 shadow-sm">
+        <div class="card-header bg-light fw-semibold">Datos del paciente</div>
+        <div class="card-body small">
+            <div class="row g-2">
+                <div class="col-md-6"><strong>Nombre:</strong> {{ $patient->fullName() }}</div>
                 <div class="col-md-3">
                     <strong>Edad:</strong>
-                    {{ $patient->birth_date ? $patient->birth_date->age . ' años' : '—' }}
+                    {{ $patient->birth_date ? \Carbon\Carbon::parse($patient->birth_date)->age . ' años' : '—' }}
                 </div>
                 <div class="col-md-3">
                     <strong>Sexo:</strong>
                     {{ $patient->gender === 'M' ? 'Masculino' : ($patient->gender === 'F' ? 'Femenino' : '—') }}
                 </div>
-                <div class="col-md-6">
-                    <strong>Fecha de nacimiento:</strong>
-                    {{ $patient->birth_date ? $patient->birth_date->format('d/m/Y') : '—' }}
+                <div class="col-md-3">
+                    <strong>F. Ingreso:</strong> {{ $stay->admission_date->format('d/m/Y') }}
                 </div>
-                <div class="col-md-6">
-                    <strong>Cuarto:</strong> {{ $stay->room->number ?? '—' }}
+                <div class="col-md-3">
+                    <strong>F. Egreso:</strong>
+                    {{ $stay->discharge_date ? $stay->discharge_date->format('d/m/Y') : 'Aún hospitalizado' }}
                 </div>
-                <div class="col-md-6">
-                    <strong>Fecha de ingreso:</strong>
-                    {{ $stay->admission_date ? $stay->admission_date->format('d/m/Y H:i') : '—' }}
-                </div>
+                <div class="col-md-3"><strong>Habitación:</strong> {{ $stay->room->number ?? '—' }}</div>
+                <div class="col-md-3"><strong>Expediente:</strong> {{ $patient->id }}</div>
             </div>
         </div>
     </div>
 
-    <form method="POST" action="{{ route('dischargeNote.update', $stay) }}"
-          id="discharge-note-form">
+    <form method="POST" action="{{ route('dischargeNote.update', $stay) }}">
         @csrf
         @method('PUT')
 
+        {{-- Médico tratante (solo si no es doctor) --}}
         @if(!auth()->user()->isDoctor())
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h6 class="mb-0">M&eacute;dico tratante</h6>
-                </div>
+            <div class="card mb-3 border-0 shadow-sm">
                 <div class="card-body">
-                    <label class="form-label">
-                        M&eacute;dico responsable <span class="text-danger">*</span>
+                    <label class="form-label fw-semibold">
+                        Médico tratante <span class="text-danger">*</span>
                     </label>
-                    <select name="attending_doctor_id" required
-                            class="form-select @error('attending_doctor_id') is-invalid @enderror">
-                        <option value="">Selecciona un m&eacute;dico...</option>
-                        @foreach($availableDoctors as $doctor)
-                            <option value="{{ $doctor->id }}"
-                                {{ old('attending_doctor_id', $note->attending_doctor_id) == $doctor->id ? 'selected' : '' }}>
-                                Dr(a). {{ $doctor->name }} {{ $doctor->last_name_one ?? '' }}
-                                @if($doctor->specialtiesLabel())
-                                    — {{ $doctor->specialtiesLabel() }}
+                    <select name="attending_doctor_id"
+                            class="form-select @error('attending_doctor_id') is-invalid @enderror" required>
+                        <option value="">Seleccionar...</option>
+                        @foreach($availableDoctors as $doc)
+                            <option value="{{ $doc->id }}"
+                                    {{ old('attending_doctor_id', $note->attending_doctor_id) == $doc->id ? 'selected' : '' }}>
+                                Dr(a). {{ $doc->fullName() }}
+                                @if(method_exists($doc, 'specialtiesLabel') && $doc->specialtiesLabel())
+                                    — {{ $doc->specialtiesLabel() }}
                                 @endif
                             </option>
                         @endforeach
@@ -96,142 +108,76 @@
             </div>
         @endif
 
+        {{-- Selector de plantilla --}}
         @if($templates->isNotEmpty())
-            <div class="card mb-3 border-info">
-                <div class="card-header bg-info-subtle">
-                    <h6 class="mb-0">
-                        <i class="bi bi-journal-text"></i> Cargar desde plantilla
-                    </h6>
-                </div>
+            <div class="card mb-3 border-0 shadow-sm">
                 <div class="card-body">
-                    <p class="small text-muted mb-3">
-                        Selecciona una plantilla para pre-llenar los campos vac&iacute;os.
-                        El contenido ya capturado no se sobrescribe.
-                    </p>
-                    <div class="row g-2 align-items-end">
-                        <div class="col-md-8">
-                            <label class="form-label">Plantilla disponible</label>
-                            <select id="template-selector" class="form-select">
-                                <option value="">Selecciona una plantilla...</option>
-                                @foreach($templates as $template)
-                                    <option value="{{ $template->id }}">
-                                        {{ $template->name }}
-                                        @if(auth()->user()->isAdmin() || auth()->user()->isNurse())
-                                            (de Dr(a). {{ $template->owner->name }})
-                                        @endif
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <button type="button" id="load-template-btn"
-                                    class="btn btn-info w-100" disabled>
-                                <i class="bi bi-download"></i> Cargar plantilla
-                            </button>
-                        </div>
+                    <h6 class="mb-2">
+                        <i class="bi bi-file-text me-1"></i>Cargar plantilla (opcional)
+                    </h6>
+                    <div class="d-flex gap-2 align-items-center mb-1">
+                        <select id="template_select" class="form-select form-select-sm" style="max-width:320px;">
+                            <option value="">— Sin plantilla —</option>
+                            @foreach($templates as $tpl)
+                                <option value="{{ $tpl->id }}">{{ $tpl->name }}</option>
+                            @endforeach
+                        </select>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="loadTemplate()">
+                            <i class="bi bi-arrow-down-circle"></i> Cargar
+                        </button>
                     </div>
-                    <div id="template-load-status" class="small text-muted mt-2"></div>
+                    <small class="text-muted">Solo prellena campos vacíos, no sobrescribe lo que ya escribiste.</small>
                 </div>
             </div>
         @endif
 
-        <div class="card mb-3">
-            <div class="card-header">
-                <h6 class="mb-0">Secciones de la nota de egreso</h6>
-                <small class="text-muted">
-                    Todas las secciones son opcionales. Captura lo que aplique al paciente.
-                </small>
+        {{-- 6 secciones narrativas --}}
+        @foreach($sections as $key => $config)
+            <div class="card mb-3 border-0 shadow-sm">
+                <div class="card-body">
+                    <label class="form-label fw-semibold">{{ $config['label'] }}</label>
+                    <textarea name="{{ $key }}" rows="5"
+                              placeholder="{{ $config['placeholder'] }}"
+                              class="form-control @error($key) is-invalid @enderror"
+                    >{{ old($key, $note->{$key}) }}</textarea>
+                    @error($key)
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
             </div>
-            <div class="card-body">
-                @foreach($sections as $key => $section)
-                    <div class="mb-4">
-                        <label class="form-label">
-                            <strong>{{ $section['order'] }}. {{ $section['label'] }}</strong>
-                        </label>
-                        <textarea name="{{ $key }}" rows="6"
-                                  data-section="{{ $key }}"
-                                  placeholder="{{ $section['placeholder'] }}"
-                                  class="form-control section-textarea @error($key) is-invalid @enderror"
-                                  >{{ old($key, $note->{$key}) }}</textarea>
-                        @error($key)
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                @endforeach
-            </div>
-        </div>
+        @endforeach
 
         <div class="d-flex justify-content-between mb-5">
-            <a href="{{ route('stays.show', ['room' => $stay->room_id]) }}" class="btn btn-secondary">
-                Cancelar
-            </a>
+            <a href="{{ route('stays.show', $stay) }}" class="btn btn-secondary">Cancelar</a>
             <button type="submit" class="btn btn-primary">
-                <i class="bi bi-check-circle"></i> Guardar nota de egreso
+                <i class="bi bi-save me-1"></i>Guardar Nota de Alta
             </button>
         </div>
     </form>
 </div>
 
 <script>
-(function() {
-    var selector = document.getElementById('template-selector');
-    var loadBtn = document.getElementById('load-template-btn');
-    var statusEl = document.getElementById('template-load-status');
+function loadTemplate() {
+    const select = document.getElementById('template_select');
+    const templateId = select.value;
+    if (!templateId) { alert('Selecciona una plantilla primero.'); return; }
 
-    if (!selector || !loadBtn) return;
-
-    selector.addEventListener('change', function() {
-        loadBtn.disabled = !this.value;
-    });
-
-    loadBtn.addEventListener('click', function() {
-        var templateId = selector.value;
-        if (!templateId) return;
-
-        statusEl.textContent = 'Cargando plantilla...';
-        statusEl.className = 'small text-muted mt-2';
-        loadBtn.disabled = true;
-
-        fetch('/medical-templates/' + templateId + '/content', {
-            headers: { 'Accept': 'application/json' }
-        })
-        .then(function(r) {
-            if (!r.ok) throw new Error('Error HTTP ' + r.status);
-            return r.json();
-        })
-        .then(function(data) {
-            var sections = data.sections || {};
-            var filledCount = 0;
-            var skippedCount = 0;
-
-            Object.keys(sections).forEach(function(key) {
-                var content = sections[key];
-                var textarea = document.querySelector('textarea[data-section="' + key + '"]');
-                if (!textarea) return;
-
-                var currentValue = textarea.value.trim();
-                if (currentValue === '' && content) {
-                    textarea.value = content;
-                    filledCount++;
-                } else if (currentValue !== '' && content) {
-                    skippedCount++;
+    fetch(`/discharge-templates/${templateId}/content`)
+        .then(r => r.json())
+        .then(data => {
+            const fields = ['admission_diagnosis', 'discharge_diagnosis', 'clinical_summary',
+                           'physical_examination_at_discharge', 'plan_and_treatment_at_discharge', 'prognosis'];
+            let filled = 0;
+            fields.forEach(f => {
+                const el = document.querySelector(`textarea[name="${f}"]`);
+                if (el && !el.value.trim() && data.sections && data.sections[f]) {
+                    el.value = data.sections[f];
+                    filled++;
                 }
             });
-
-            var msg = 'Plantilla cargada. ' + filledCount + ' secciones rellenadas.';
-            if (skippedCount > 0) {
-                msg += ' ' + skippedCount + ' secciones omitidas (ya tenían contenido).';
-            }
-            statusEl.textContent = msg;
-            statusEl.className = 'small text-success mt-2';
-            loadBtn.disabled = false;
+            alert(filled ? `${filled} campo(s) prellenado(s).` : 'Todos los campos ya tienen contenido.');
         })
-        .catch(function(err) {
-            statusEl.textContent = 'Error al cargar la plantilla: ' + err.message;
-            statusEl.className = 'small text-danger mt-2';
-            loadBtn.disabled = false;
-        });
-    });
-})();
+        .catch(() => alert('Error al cargar la plantilla.'));
+}
 </script>
 @endsection

@@ -223,10 +223,25 @@
                             <div class="table-responsive">
                                 <table class="table table-sm align-middle mb-0">
                                     <thead class="table-light">
-                                        <tr><th>Medicamento</th><th>Dosis</th><th>Inicio</th><th>Duración</th><th>Finalizada el</th><th>Prescrita por</th></tr>
+                                        <tr>
+                                            <th>Medicamento</th>
+                                            <th>Dosis</th>
+                                            <th>Inicio</th>
+                                            <th>Duración</th>
+                                            <th>Finalizada el</th>
+                                            <th>Prescrita por</th>
+                                            <th>Administraciones</th>
+                                        </tr>
                                     </thead>
                                     <tbody>
                                         @foreach($finishedOrders as $order)
+                                        @php
+                                            $adms = $order->administrations;
+                                            $administered = $adms->where('status', 'administered')->count();
+                                            $omitted      = $adms->where('status', 'omitted')->count();
+                                            $refused      = $adms->where('status', 'refused')->count();
+                                            $totalAdms    = $adms->count();
+                                        @endphp
                                         <tr>
                                             <td>{{ $order->medication_name }}</td>
                                             <td>{{ $order->dose }}</td>
@@ -234,11 +249,88 @@
                                             <td class="small">{{ $order->duration_days }} día(s)</td>
                                             <td class="text-nowrap small">{{ $order->endDate()?->format('d/m/Y') ?? '—' }}</td>
                                             <td class="text-muted small">Dr(a). {{ $order->prescribedBy?->fullName() ?? '—' }}</td>
+                                            <td>
+                                                @if($totalAdms > 0)
+                                                    <button type="button"
+                                                            class="badge bg-success border-0 text-white"
+                                                            style="cursor:pointer;"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#admModal-{{ $order->id }}">
+                                                        <i class="bi bi-check-circle"></i>
+                                                        {{ $administered }}
+                                                        {{ $administered === 1 ? 'administración' : 'administraciones' }}
+                                                        @if($omitted > 0 || $refused > 0)
+                                                            <span class="ms-1 opacity-75">
+                                                                ({{ $omitted + $refused }} sin adm.)
+                                                            </span>
+                                                        @endif
+                                                    </button>
+                                                @else
+                                                    <span class="badge bg-warning text-dark"
+                                                          data-bs-toggle="tooltip"
+                                                          title="No se registraron administraciones. Revisar las notas de enfermería para conocer el motivo.">
+                                                        <i class="bi bi-exclamation-triangle"></i>
+                                                        Sin administraciones
+                                                    </span>
+                                                @endif
+                                            </td>
                                         </tr>
                                         @endforeach
                                     </tbody>
                                 </table>
                             </div>
+
+                            {{-- Modales de detalle por prescripción finalizada --}}
+                            @foreach($finishedOrders as $order)
+                                @if($order->administrations->count() > 0)
+                                <div class="modal fade" id="admModal-{{ $order->id }}" tabindex="-1"
+                                     aria-labelledby="admModalLabel-{{ $order->id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="admModalLabel-{{ $order->id }}">
+                                                    Administraciones — {{ $order->medication_name }}
+                                                    <small class="text-muted fw-normal">{{ $order->dose }}</small>
+                                                </h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body p-0">
+                                                <table class="table table-sm align-middle mb-0">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th class="ps-3">Fecha y hora</th>
+                                                            <th>Estado</th>
+                                                            <th>Registrado por</th>
+                                                            <th>Observaciones</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach($order->administrations->sortBy('administered_at') as $adm)
+                                                        <tr>
+                                                            <td class="ps-3 text-nowrap small">
+                                                                {{ $adm->administered_at->format('d/m/Y H:i') }}
+                                                            </td>
+                                                            <td>
+                                                                <span class="badge {{ $adm->statusBadgeClass() }}">
+                                                                    {{ $adm->statusLabel() }}
+                                                                </span>
+                                                            </td>
+                                                            <td class="small">{{ $adm->recordedBy?->fullName() ?? '—' }}</td>
+                                                            <td class="small text-muted">{{ $adm->observations ?? '—' }}</td>
+                                                        </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-sm btn-secondary"
+                                                        data-bs-dismiss="modal">Cerrar</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
+                            @endforeach
                         @endif
                     </div>
                 </div>
@@ -478,4 +570,15 @@
     </div>{{-- /tab-content --}}
 
 </div>{{-- /container --}}
+
+@push('scripts')
+<script>
+(function () {
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+        new bootstrap.Tooltip(el);
+    });
+})();
+</script>
+@endpush
+
 @endsection

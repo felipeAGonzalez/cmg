@@ -167,6 +167,21 @@ class StayController extends Controller
             return back()->with('error', 'Esta estancia ya fue dada de alta.');
         }
 
+        // Advertir si la Nota de Alta no está completa (no bloquea, solo avisa)
+        if (! $request->boolean('confirmed_without_note')) {
+            $note = \App\Models\DischargeNote::where('stay_id', $stay->id)->first();
+            if (! $note || ! $note->isComplete()) {
+                $pending = $note ? $note->pendingSections() : ['(la nota aún no ha sido creada)'];
+                return redirect()->back()
+                    ->withInput()
+                    ->with('warning_discharge_note', [
+                        'message' => 'La Nota de Alta no está completa. ¿Confirmas ejecutar el alta de todos modos?',
+                        'pending' => $pending,
+                    ])
+                    ->with('pending_discharge_reason', $request->validated('discharge_reason'));
+            }
+        }
+
         $room = $stay->room;
         $stay->update([
             'discharge_date'   => now(),
@@ -208,6 +223,73 @@ class StayController extends Controller
 
         return redirect()->route('rooms.index')
             ->with('success', 'Paciente dado de alta. El Cuarto ' . $room->number . ' volvió a estar disponible.');
+    }
+
+    public function indicateDischarge(Request $request, Stay $stay): RedirectResponse
+    {
+        $this->authorizeStayAccess($stay);
+
+        if ($stay->discharge_date !== null) {
+            return redirect()->back()
+                ->with('error', 'No se puede indicar alta de una estancia ya dada de alta.');
+        }
+
+        if (!$stay->hasDischargeIndicated()) {
+            $stay->update([
+                'discharge_indicated_at'    => now(),
+                'discharge_indicated_by_id' => auth()->id(),
+            ]);
+        }
+
+        if ($request->query('then') === 'note') {
+            return redirect()->route('dischargeNote.edit', $stay)
+                ->with('success', 'Alta indicada. Continúa llenando la Nota de Alta.');
+        }
+
+        return redirect()->back()
+            ->with('success', 'Alta indicada correctamente. La enfermera podrá ejecutar el alta cuando pueda.');
+    }
+
+    public function revertDischargeIndication(Request $request, Stay $stay): RedirectResponse
+    {
+        $this->authorizeStayAccess($stay);
+
+        if (! $stay->hasDischargeIndicated()) {
+            return redirect()->back()
+                ->with('info', 'Esta estancia no tiene alta indicada.');
+        }
+
+        if ($stay->discharge_date !== null) {
+            return redirect()->back()
+                ->with('error', 'No se puede revertir el alta de una estancia ya dada de alta.');
+        }
+
+        $stay->update([
+            'discharge_indicated_at'    => null,
+            'discharge_indicated_by_id' => null,
+        ]);
+
+        return redirect()->back()
+            ->with('success', 'Indicación de alta revertida.');
+    }
+
+    protected function authorizeStayAccess(Stay $stay): void
+    {
+        $user = auth()->user();
+
+        if ($user->isAdmin()) {
+            return;
+        }
+
+        if ($user->isDoctor()) {
+            $isAssigned = $stay->currentDoctors()->where('doctor_id', $user->id)->exists();
+            if (! $isAssigned) {
+                abort(403);
+            }
+            return;
+        }
+
+        abort(403);
     }
 
     public function storeInstruction(Request $request, Stay $stay): RedirectResponse

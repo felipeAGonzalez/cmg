@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreRoomRequest;
 use App\Http\Requests\UpdateRoomRequest;
 use App\Models\Room;
+use App\Models\Stay;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -13,13 +14,16 @@ class RoomController extends Controller
 {
     public function index(Request $request): View
     {
-        $rooms = Room::with(['currentStays.patient'])->orderBy('number')->get();
+        $rooms = Room::with(['currentStays.patient', 'currentStays.dischargeIndicatedBy'])
+            ->orderBy('number')
+            ->get();
 
         $total     = $rooms->count();
         $available = $rooms->filter(fn($r) => $r->isAvailable())->count();
         $occupied  = $total - $available;
 
-        $search      = $request->query('search');
+        $search       = $request->query('search');
+        $filter       = $request->query('filter', 'all');
         $displayRooms = $rooms;
 
         if ($search) {
@@ -28,7 +32,6 @@ class RoomController extends Controller
                     return true;
                 }
 
-                // Coincide si cualquiera de los pacientes activos del cuarto coincide.
                 return $room->currentStays->contains(function ($stay) use ($search) {
                     return $stay->patient && str_contains(
                         strtolower($stay->patient->fullName()),
@@ -38,7 +41,20 @@ class RoomController extends Controller
             });
         }
 
-        return view('rooms.index', compact('displayRooms', 'total', 'available', 'occupied', 'search'));
+        if ($filter === 'discharge_pending') {
+            $displayRooms = $displayRooms->filter(
+                fn(Room $room) => $room->currentStays->contains(
+                    fn($stay) => $stay->hasDischargeIndicated()
+                )
+            );
+        }
+
+        $dischargePendingCount = Stay::withDischargeIndicated()->count();
+
+        return view('rooms.index', compact(
+            'displayRooms', 'total', 'available', 'occupied',
+            'search', 'filter', 'dischargePendingCount'
+        ));
     }
 
     public function create(): View

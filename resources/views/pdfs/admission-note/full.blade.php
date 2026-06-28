@@ -86,7 +86,7 @@
             @empty
                 <tr>
                     <td colspan="2" style="border:1px solid #333; padding:12px; text-align:center; color:#777; font-style:italic;">
-                        Sin indicaciones médicas registradas durante la estancia.
+                        Sin indicaciones registradas el día de ingreso.
                     </td>
                 </tr>
             @endforelse

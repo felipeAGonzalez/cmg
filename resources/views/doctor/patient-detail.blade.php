@@ -11,8 +11,12 @@
                 <div class="col-auto text-center">
                     <i class="bi bi-person-fill text-primary" style="font-size:3rem; line-height:1;"></i>
                     <div class="mt-2 d-flex flex-column gap-1">
-                        <span class="badge bg-secondary">Cuarto {{ $stay->room->number }}</span>
-                        <span class="badge bg-danger">Ocupado</span>
+                        <span class="badge bg-secondary">Cuarto {{ $stay->room->number ?? '—' }}</span>
+                        @if($stay->discharge_date !== null)
+                            <span class="badge bg-secondary">Dado de alta</span>
+                        @else
+                            <span class="badge bg-danger">Ocupado</span>
+                        @endif
                     </div>
                 </div>
 
@@ -29,17 +33,74 @@
                     </div>
                     <div class="small text-muted mt-1">
                         <i class="bi bi-calendar-check me-1"></i>Ingreso: {{ $stay->admission_date->format('d/m/Y H:i') }}
+                        @if($stay->discharge_date !== null)
+                            &nbsp;&middot;&nbsp;<i class="bi bi-box-arrow-right me-1"></i>Alta: {{ $stay->discharge_date->format('d/m/Y H:i') }}
+                        @endif
                     </div>
                 </div>
 
-                <div class="col-auto">
-                    <a href="{{ route('doctor.myPatients') }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-arrow-left me-1"></i>Mis pacientes
+                <div class="col-auto d-flex gap-2 align-items-center flex-wrap">
+                    <a href="{{ route('doctor.myPatients', ['tab' => $stay->discharge_date ? 'discharged' : 'active']) }}"
+                       class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        @if(auth()->user()->isDoctor()) Mis pacientes @else Pacientes @endif
                     </a>
+                    @if($stay->discharge_date === null && auth()->user()->isDoctor())
+                        @if(! $stay->hasDischargeIndicated())
+                            <div class="d-flex gap-1 flex-wrap">
+                                <button type="button" class="btn btn-warning btn-sm"
+                                        data-bs-toggle="modal" data-bs-target="#indicateDischargeModal">
+                                    <i class="bi bi-clock-history me-1"></i> Indicar alta
+                                </button>
+                                <form id="indicateAndFillNoteForm" method="POST"
+                                      action="{{ route('stays.indicateDischarge', ['stay' => $stay, 'then' => 'note']) }}"
+                                      style="display:none;">
+                                    @csrf
+                                </form>
+                                <button type="button" class="btn btn-outline-warning btn-sm"
+                                        onclick="document.getElementById('indicateAndFillNoteForm').submit();">
+                                    <i class="bi bi-clock-history me-1"></i><i class="bi bi-pencil me-1"></i>
+                                    Indicar alta y llenar Nota
+                                </button>
+                            </div>
+                        @else
+                            <div class="alert alert-warning d-flex justify-content-between align-items-center mb-0 py-2 px-3">
+                                <div class="small">
+                                    <i class="bi bi-clock-history me-1"></i>
+                                    <strong>Alta indicada</strong> por
+                                    Dr(a). {{ $stay->dischargeIndicatedBy?->name ?? '—' }} el
+                                    {{ $stay->discharge_indicated_at->format('d/m/Y H:i') }}.
+                                    <span class="text-muted">Pendiente de ejecución por enfermería.</span>
+                                </div>
+                                <form method="POST" action="{{ route('stays.revertDischargeIndication', $stay) }}"
+                                      class="ms-3 flex-shrink-0"
+                                      onsubmit="return confirm('¿Revertir la indicación de alta?');">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-arrow-counterclockwise"></i> Revertir
+                                    </button>
+                                </form>
+                            </div>
+                        @endif
+                    @endif
                 </div>
             </div>
         </div>
     </div>
+
+    {{-- Banner: paciente dado de alta --}}
+    @if($stay->discharge_date !== null)
+        <div class="alert alert-secondary d-flex align-items-center mb-3 border-0 shadow-sm">
+            <i class="bi bi-archive me-2 fs-5"></i>
+            <div>
+                <strong>Paciente dado de alta</strong> el
+                {{ $stay->discharge_date->format('d/m/Y H:i') }}.
+                @if($stay->discharge_reason)
+                    Motivo: <em>{{ config('discharge_reasons.' . $stay->discharge_reason, $stay->discharge_reason) }}</em>.
+                @endif
+            </div>
+        </div>
+    @endif
 
     {{-- ════════════════ TABS ════════════════ --}}
     <ul class="nav nav-tabs" id="patientTabs" role="tablist">
@@ -108,9 +169,11 @@
                     <h6 class="fw-bold text-primary mb-0">
                         <i class="bi bi-pencil-square me-1"></i>Indicaciones médicas
                     </h6>
-                    <button type="button" class="btn btn-outline-primary btn-sm" id="btnEscribirInstruccion">
-                        <i class="bi bi-plus-circle me-1"></i>Escribir indicación
-                    </button>
+                    @if($doctor && $stay->discharge_date === null)
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="btnEscribirInstruccion">
+                            <i class="bi bi-plus-circle me-1"></i>Escribir indicación
+                        </button>
+                    @endif
                 </div>
 
                 @if($stay->instructions->isEmpty())
@@ -182,7 +245,9 @@
                 $medActive    = $medOrders->filter->isActive();
                 $medSuspended = $medOrders->filter->isSuspended();
                 $medFinished  = $medOrders->filter->isFinished();
-                $isAssigned   = $stay->currentDoctors->where('doctor_id', $doctor->id)->count() > 0;
+                $isAssigned   = $doctor
+                    ? $stay->currentDoctors->where('doctor_id', $doctor->id)->count() > 0
+                    : false;
             @endphp
 
             <div class="row g-2 mb-3">
@@ -331,11 +396,10 @@
                                             </a>
                                         @endif
                                     @elseif($isDischargeNote)
-                                        @if($stayActive)
-                                            <a href="{{ route('dischargeNote.edit', $stay) }}" class="btn btn-sm btn-outline-primary">
-                                                <i class="bi bi-pencil"></i> {{ $isCompleted ? 'Editar' : 'Llenar' }}
-                                            </a>
-                                        @endif
+                                        {{-- Editable por el médico tratante siempre (incluso tras alta) --}}
+                                        <a href="{{ route('dischargeNote.edit', $stay) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i> {{ $isCompleted ? 'Editar' : 'Llenar' }}
+                                        </a>
                                         @if($isCompleted || \App\Models\DischargeNote::where('stay_id', $stay->id)->exists())
                                             <a href="{{ route('dischargeNote.pdf', $stay) }}" target="_blank" class="btn btn-sm btn-outline-primary">
                                                 <i class="bi bi-eye"></i> Ver
@@ -376,13 +440,86 @@
                     </table>
                 </div>
             @endif
+
+            {{-- Card de Notas de Evolución --}}
+            @php
+                $evolutionNoteCount = \App\Models\EvolutionNote::where('stay_id', $stay->id)->count();
+            @endphp
+            <div class="card mb-3 mt-3">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-arrow-up-right-circle" style="font-size:1.5rem; color:#E91E63;"></i>
+                            <div>
+                                <h6 class="mb-0">Notas de Evolución</h6>
+                                <small class="text-muted">
+                                    @if($evolutionNoteCount === 0)
+                                        Sin notas registradas.
+                                    @else
+                                        {{ $evolutionNoteCount }} nota(s) registrada(s).
+                                    @endif
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{{ route('evolutionNotes.index', $stay) }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-list-ul me-1"></i>Ver notas
+                    </a>
+                </div>
+            </div>
+
+            {{-- Card de transfusiones (fuera del catálogo de documentos) --}}
+            @php
+                $transfusionCount = \App\Models\TransfusionChecklist::where('stay_id', $stay->id)->count();
+                $pendingTransfusions = \App\Models\TransfusionChecklist::where('stay_id', $stay->id)
+                    ->whereNull('finalized_at')
+                    ->count();
+            @endphp
+
+            <div class="card mb-3 mt-3">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-droplet-half" style="font-size:1.5rem; color:#E91E63;"></i>
+                            <div>
+                                <h6 class="mb-0">Lista de Verificación de Transfusión Segura</h6>
+                                <small class="text-muted">
+                                    @if($transfusionCount === 0)
+                                        Sin transfusiones registradas.
+                                    @else
+                                        {{ $transfusionCount }}
+                                        {{ $transfusionCount === 1 ? 'transfusión registrada' : 'transfusiones registradas' }}
+                                        @if($pendingTransfusions > 0)
+                                            · {{ $pendingTransfusions }} en progreso
+                                        @endif
+                                    @endif
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-1">
+                        <a href="{{ route('transfusionChecklists.index', $stay) }}"
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-list"></i> Ver transfusiones
+                        </a>
+                        @if($stay->discharge_date === null)
+                            <a href="{{ route('transfusionChecklists.create', $stay) }}"
+                               class="btn btn-sm btn-primary">
+                                <i class="bi bi-plus-circle"></i> Nueva
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     {{-- ════════════════ ACCIONES INFERIORES ════════════════ --}}
     <div class="d-flex flex-wrap gap-2">
-        <a href="{{ route('doctor.myPatients') }}" class="btn btn-outline-secondary ms-auto">
-            <i class="bi bi-arrow-left me-1"></i>Volver a mis pacientes
+        <a href="{{ route('doctor.myPatients', ['tab' => $stay->discharge_date ? 'discharged' : 'active']) }}"
+           class="btn btn-outline-secondary ms-auto">
+            <i class="bi bi-arrow-left me-1"></i>
+            @if(auth()->user()->isDoctor()) Volver a mis pacientes @else Volver a pacientes @endif
         </a>
     </div>
 
@@ -426,6 +563,45 @@
             </div>
         </div>
     </div>
+
+
+    {{-- Modal: Indicar alta --}}
+    @if(! $stay->hasDischargeIndicated() && $stay->discharge_date === null)
+    <div class="modal fade" id="indicateDischargeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <form method="POST" action="{{ route('stays.indicateDischarge', $stay) }}">
+                @csrf
+                <div class="modal-content shadow">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title fw-bold">
+                            <i class="bi bi-clock-history me-1"></i>Indicar alta
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-2">
+                            ¿Confirmas que el paciente
+                            <strong>{{ $stay->patient->fullName() }}</strong>
+                            está listo para alta?
+                        </p>
+                        <p class="text-muted small mb-0">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Esta acción <strong>no</strong> da de alta al paciente.
+                            Solo registra tu indicación clínica. La enfermera ejecutará el alta
+                            cuando pueda y capturará el motivo correspondiente.
+                        </p>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-check-circle me-1"></i>Confirmar indicación
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    @endif
 
 </div>{{-- /container --}}
 @endsection

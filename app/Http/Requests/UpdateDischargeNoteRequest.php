@@ -15,20 +15,15 @@ class UpdateDischargeNoteRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'family_history' => ['nullable', 'string', 'max:10000'],
-            'non_pathological_history' => ['nullable', 'string', 'max:10000'],
-            'pathological_history' => ['nullable', 'string', 'max:10000'],
-            'current_illness' => ['nullable', 'string', 'max:10000'],
-            'general_symptoms' => ['nullable', 'string', 'max:5000'],
-            'physical_examination' => ['nullable', 'string', 'max:10000'],
-            'diagnostic_aids' => ['nullable', 'string', 'max:10000'],
-            'main_diagnoses' => ['nullable', 'string', 'max:5000'],
-            'comorbidities' => ['nullable', 'string', 'max:5000'],
-            'clinical_plan' => ['nullable', 'string', 'max:15000'],
-            'signature_block' => ['nullable', 'string', 'max:500'],
+            'admission_diagnosis'              => ['nullable', 'string', 'max:10000'],
+            'discharge_diagnosis'              => ['nullable', 'string', 'max:10000'],
+            'clinical_summary'                 => ['nullable', 'string', 'max:15000'],
+            'physical_examination_at_discharge' => ['nullable', 'string', 'max:10000'],
+            'plan_and_treatment_at_discharge'  => ['nullable', 'string', 'max:15000'],
+            'prognosis'                        => ['nullable', 'string', 'max:5000'],
         ];
 
-        if (!auth()->user()->isDoctor()) {
+        if (auth()->user() && !auth()->user()->isDoctor()) {
             $rules['attending_doctor_id'] = [
                 'required',
                 Rule::exists('users', 'id')->where(fn($q) => $q->where('role', 'doctor')),

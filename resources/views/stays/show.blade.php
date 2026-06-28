@@ -57,6 +57,20 @@
         </div>
     </div>
 
+    {{-- Banner: paciente dado de alta --}}
+    @if($stay->discharge_date !== null)
+        <div class="alert alert-secondary d-flex align-items-center mb-3 border-0 shadow-sm">
+            <i class="bi bi-archive me-2 fs-5"></i>
+            <div>
+                <strong>Paciente dado de alta</strong> el
+                {{ $stay->discharge_date->format('d/m/Y H:i') }}.
+                @if($stay->discharge_reason)
+                    Motivo: <em>{{ config('discharge_reasons.' . $stay->discharge_reason, $stay->discharge_reason) }}</em>.
+                @endif
+            </div>
+        </div>
+    @endif
+
     {{-- ════════════════ SELECTOR DE PACIENTE (madre + recién nacido) ════════════════ --}}
     @if($currentStays->count() > 1)
     <div class="card border-0 shadow-sm mb-3">
@@ -196,6 +210,7 @@
                     </div>
                 @endif
             </div>
+
         </div>
 
         {{-- ────────── TAB: Hojas de Enfermería ────────── --}}
@@ -402,10 +417,15 @@
                                             </a>
                                         @endif
                                     @elseif($isDischargeNote)
-                                        @if($stayActive)
+                                        @if($stayActive || $user->isAdmin())
                                             <a href="{{ route('dischargeNote.edit', $stay) }}" class="btn btn-sm btn-outline-primary">
                                                 <i class="bi bi-pencil"></i> {{ $isCompleted ? 'Editar' : 'Llenar' }}
                                             </a>
+                                        @else
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" disabled
+                                                    title="Solo el médico o administrador puede editar tras el alta">
+                                                <i class="bi bi-pencil"></i> Llenar
+                                            </button>
                                         @endif
                                     @elseif($isAuthorizedConsent)
                                         @if($stayActive)
@@ -481,6 +501,79 @@
                     </table>
                 </div>
             @endif
+
+            {{-- Card de Notas de Evolución --}}
+            @php
+                $evolutionNoteCount = \App\Models\EvolutionNote::where('stay_id', $stay->id)->count();
+            @endphp
+            <div class="card mb-3 mt-3">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-arrow-up-right-circle" style="font-size:1.5rem; color:#E91E63;"></i>
+                            <div>
+                                <h6 class="mb-0">Notas de Evolución</h6>
+                                <small class="text-muted">
+                                    @if($evolutionNoteCount === 0)
+                                        Sin notas registradas.
+                                    @else
+                                        {{ $evolutionNoteCount }} nota(s) registrada(s).
+                                    @endif
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{{ route('evolutionNotes.index', $stay) }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-list-ul me-1"></i>Ver notas
+                    </a>
+                </div>
+            </div>
+
+            {{-- Card de transfusiones (fuera del catálogo de documentos) --}}
+            @php
+                $transfusionCount = \App\Models\TransfusionChecklist::where('stay_id', $stay->id)->count();
+                $pendingTransfusions = \App\Models\TransfusionChecklist::where('stay_id', $stay->id)
+                    ->whereNull('finalized_at')
+                    ->count();
+            @endphp
+
+            <div class="card mb-3 mt-3">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-droplet-half" style="font-size:1.5rem; color:#E91E63;"></i>
+                            <div>
+                                <h6 class="mb-0">Lista de Verificación de Transfusión Segura</h6>
+                                <small class="text-muted">
+                                    @if($transfusionCount === 0)
+                                        Sin transfusiones registradas.
+                                    @else
+                                        {{ $transfusionCount }}
+                                        {{ $transfusionCount === 1 ? 'transfusión registrada' : 'transfusiones registradas' }}
+                                        @if($pendingTransfusions > 0)
+                                            · {{ $pendingTransfusions }} en progreso
+                                        @endif
+                                    @endif
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    @if(! $user->isDoctor())
+                    <div class="d-flex gap-1">
+                        <a href="{{ route('transfusionChecklists.index', $stay) }}"
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-list"></i> Ver transfusiones
+                        </a>
+                        @if($stay->discharge_date === null)
+                            <a href="{{ route('transfusionChecklists.create', $stay) }}"
+                               class="btn btn-sm btn-primary">
+                                <i class="bi bi-plus-circle"></i> Nueva
+                            </a>
+                        @endif
+                    </div>
+                    @endif
+                </div>
+            </div>
         </div>
 
         {{-- ────────── TAB: Historial ────────── --}}
@@ -576,6 +669,7 @@
 
     {{-- ════════════════ MODALES ════════════════ --}}
 
+
     {{-- Modal: Agregar médico (admin + nurse) --}}
     @if($user->isAdmin() || $user->isNurse())
     <div class="modal fade" id="addDoctorModal" tabindex="-1" aria-hidden="true">
@@ -670,6 +764,10 @@
         <div class="modal-dialog">
             <form method="POST" action="{{ route('stays.discharge', $stay) }}">
                 @csrf
+                @if(session('warning_discharge_note'))
+                    <input type="hidden" name="confirmed_without_note" value="1">
+                    <input type="hidden" name="discharge_reason" value="{{ old('discharge_reason', session('pending_discharge_reason')) }}">
+                @endif
                 <div class="modal-content shadow">
                     <div class="modal-header border-0">
                         <h5 class="modal-title fw-bold">
@@ -678,42 +776,67 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                     </div>
                     <div class="modal-body">
-                        <p>Vas a dar de alta a <strong>{{ $stay->patient->fullName() }}</strong> del Cuarto <strong>{{ $room->number }}</strong>.</p>
-                        <p class="text-muted small">
-                            Al confirmar, se suspenderán automáticamente todas las órdenes activas
-                            (medicamentos, balance de líquidos, monitoreo de glucemia) y se marcarán
-                            como completados los documentos correspondientes.
-                        </p>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                Motivo del alta <span class="text-danger">*</span>
-                            </label>
-                            <select name="discharge_reason" required
-                                    class="form-select @error('discharge_reason') is-invalid @enderror">
-                                <option value="">Selecciona un motivo…</option>
-                                @foreach(config('discharge_reasons') as $key => $label)
-                                    <option value="{{ $key }}"
-                                            {{ old('discharge_reason') === $key ? 'selected' : '' }}>
-                                        {{ $label }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('discharge_reason')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
+
+                        @if(session('warning_discharge_note'))
+                            @php $w = session('warning_discharge_note'); @endphp
+                            <div class="alert alert-warning">
+                                <strong><i class="bi bi-exclamation-triangle me-1"></i>{{ $w['message'] }}</strong>
+                                <ul class="mt-2 mb-2">
+                                    @foreach($w['pending'] as $section)
+                                        <li>{{ $section }}</li>
+                                    @endforeach
+                                </ul>
+                                <a href="{{ route('dischargeNote.edit', $stay) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-pencil me-1"></i>Llenar Nota de Alta ahora
+                                </a>
+                            </div>
+                            <p class="text-muted small">O confirma para ejecutar el alta de todos modos.</p>
+                        @else
+                            <p>Vas a dar de alta a <strong>{{ $stay->patient->fullName() }}</strong> del Cuarto <strong>{{ $room->number }}</strong>.</p>
+                            <p class="text-muted small">
+                                Al confirmar, se suspenderán automáticamente todas las órdenes activas
+                                (medicamentos, balance de líquidos, monitoreo de glucemia) y se marcarán
+                                como completados los documentos correspondientes.
+                            </p>
+                        @endif
+
+                        @if(!session('warning_discharge_note'))
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    Motivo del alta <span class="text-danger">*</span>
+                                </label>
+                                <select name="discharge_reason" required
+                                        class="form-select @error('discharge_reason') is-invalid @enderror">
+                                    <option value="">Selecciona un motivo…</option>
+                                    @foreach(config('discharge_reasons') as $key => $label)
+                                        <option value="{{ $key }}"
+                                                {{ old('discharge_reason') === $key ? 'selected' : '' }}>
+                                            {{ $label }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('discharge_reason')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        @endif
                     </div>
                     <div class="modal-footer border-0">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-danger">
-                            <i class="bi bi-check-circle me-1"></i>Confirmar alta
+                            <i class="bi bi-check-circle me-1"></i>
+                            @if(session('warning_discharge_note'))
+                                Continuar alta sin nota completa
+                            @else
+                                Confirmar alta
+                            @endif
                         </button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
-    @if($errors->has('discharge_reason'))
+    @if($errors->has('discharge_reason') || session('warning_discharge_note'))
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             new bootstrap.Modal(document.getElementById('dischargeModal')).show();

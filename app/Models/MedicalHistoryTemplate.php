@@ -4,8 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class MedicalTemplate extends Model
+class MedicalHistoryTemplate extends Model
 {
+    protected $table = 'medical_history_templates';
+
     protected $fillable = [
         'owner_id', 'name', 'description',
         'family_history',

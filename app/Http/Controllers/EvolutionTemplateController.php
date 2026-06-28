@@ -2,78 +2,78 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreMedicalTemplateRequest;
-use App\Http\Requests\UpdateMedicalTemplateRequest;
-use App\Models\MedicalTemplate;
+use App\Http\Requests\StoreEvolutionTemplateRequest;
+use App\Http\Requests\UpdateEvolutionTemplateRequest;
+use App\Models\EvolutionTemplate;
 
-class MedicalTemplateController extends Controller
+class EvolutionTemplateController extends Controller
 {
     public function index()
     {
         $user = auth()->user();
 
-        $query = MedicalTemplate::query()->with('owner');
+        $query = EvolutionTemplate::query()->with('owner');
         if (!$user->isAdmin()) {
             $query->where('owner_id', $user->id);
         }
 
         $templates = $query->orderBy('name')->get();
 
-        return view('medical-templates.index', [
+        return view('evolution-templates.index', [
             'templates' => $templates,
-            'isAdmin' => $user->isAdmin(),
+            'isAdmin'   => $user->isAdmin(),
         ]);
     }
 
     public function create()
     {
-        return view('medical-templates.create', [
-            'sections' => config('medical_template_sections'),
+        return view('evolution-templates.create', [
+            'sections' => config('evolution_template_sections'),
         ]);
     }
 
-    public function store(StoreMedicalTemplateRequest $request)
+    public function store(StoreEvolutionTemplateRequest $request)
     {
         $data = $request->validated();
         $data['owner_id'] = auth()->id();
 
-        $template = MedicalTemplate::create($data);
+        $template = EvolutionTemplate::create($data);
 
-        return redirect()->route('medicalTemplates.show', $template)
+        return redirect()->route('evolutionTemplates.show', $template)
             ->with('success', 'Plantilla creada correctamente.');
     }
 
-    public function show(MedicalTemplate $template)
+    public function show(EvolutionTemplate $template)
     {
         $this->authorizeAccess($template, allowAdminRead: true);
 
-        return view('medical-templates.show', [
+        return view('evolution-templates.show', [
             'template' => $template->load('owner'),
-            'sections' => config('medical_template_sections'),
+            'sections' => config('evolution_template_sections'),
         ]);
     }
 
-    public function edit(MedicalTemplate $template)
+    public function edit(EvolutionTemplate $template)
     {
         $this->authorizeAccess($template, allowAdminRead: false);
 
-        return view('medical-templates.edit', [
+        return view('evolution-templates.edit', [
             'template' => $template,
-            'sections' => config('medical_template_sections'),
+            'sections' => config('evolution_template_sections'),
         ]);
     }
 
-    public function update(UpdateMedicalTemplateRequest $request, MedicalTemplate $template)
+    public function update(UpdateEvolutionTemplateRequest $request, EvolutionTemplate $template)
     {
         $this->authorizeAccess($template, allowAdminRead: false);
 
         $template->update($request->validated());
 
-        return redirect()->route('medicalTemplates.show', $template)
+        return redirect()->route('evolutionTemplates.show', $template)
             ->with('success', 'Plantilla actualizada correctamente.');
     }
 
-    public function duplicate(MedicalTemplate $template)
+    public function duplicate(EvolutionTemplate $template)
     {
         $this->authorizeAccess($template, allowAdminRead: false);
 
@@ -82,11 +82,11 @@ class MedicalTemplateController extends Controller
         $copy->name = $template->name . ' (copia)';
         $copy->save();
 
-        return redirect()->route('medicalTemplates.edit', $copy)
+        return redirect()->route('evolutionTemplates.edit', $copy)
             ->with('success', 'Plantilla duplicada. Ajusta los datos según necesites.');
     }
 
-    public function destroy(MedicalTemplate $template)
+    public function destroy(EvolutionTemplate $template)
     {
         $user = auth()->user();
         if (!$user->isAdmin() && $template->owner_id !== $user->id) {
@@ -95,11 +95,26 @@ class MedicalTemplateController extends Controller
 
         $template->delete();
 
-        return redirect()->route('medicalTemplates.index')
+        return redirect()->route('evolutionTemplates.index')
             ->with('success', 'Plantilla eliminada.');
     }
 
-    protected function authorizeAccess(MedicalTemplate $template, bool $allowAdminRead): void
+    public function content(EvolutionTemplate $template)
+    {
+        $user = auth()->user();
+
+        $canAccess = $template->owner_id === $user->id || $user->isAdmin();
+
+        if (!$canAccess) {
+            abort(403);
+        }
+
+        return response()->json([
+            'sections' => $template->sections(),
+        ]);
+    }
+
+    protected function authorizeAccess(EvolutionTemplate $template, bool $allowAdminRead): void
     {
         $user = auth()->user();
 
