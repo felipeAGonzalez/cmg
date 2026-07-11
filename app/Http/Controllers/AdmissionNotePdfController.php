@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesPatientHistory;
 use App\Models\Stay;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Response;
 
 class AdmissionNotePdfController extends Controller
 {
+    use AuthorizesPatientHistory;
     /**
      * Genera el PDF de la Nota de Ingreso con datos en vivo.
      *
@@ -21,10 +23,8 @@ class AdmissionNotePdfController extends Controller
 
         // Los médicos solo pueden ver el PDF de pacientes que tienen asignados.
         if ($user->isDoctor()) {
-            $isAssigned = $stay->currentDoctors()
-                ->where('doctor_id', $user->id)->exists();
-
-            if (! $isAssigned) {
+            $isAssigned = $stay->currentDoctors()->where('doctor_id', $user->id)->exists();
+            if (!$isAssigned && !$this->doctorCanAccessPatientHistorically($stay)) {
                 abort(403, 'No tienes acceso a este paciente.');
             }
         }

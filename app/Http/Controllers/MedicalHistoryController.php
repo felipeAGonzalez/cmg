@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesPatientHistory;
 use App\Http\Requests\UpdateMedicalHistoryRequest;
 use App\Models\Document;
 use App\Models\MedicalHistory;
@@ -12,6 +13,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class MedicalHistoryController extends Controller
 {
+    use AuthorizesPatientHistory;
     public function edit(Stay $stay)
     {
         $this->authorizeAccess($stay);
@@ -147,9 +149,8 @@ class MedicalHistoryController extends Controller
         if ($user->isAdmin()) return;
 
         if ($user->isDoctor()) {
-            $isAssigned = $stay->currentDoctors()
-                ->where('doctor_id', $user->id)->exists();
-            if (!$isAssigned) abort(403);
+            $isAssigned = $stay->currentDoctors()->where('doctor_id', $user->id)->exists();
+            if (!$isAssigned && !$this->doctorCanAccessPatientHistorically($stay)) abort(403);
             return;
         }
 

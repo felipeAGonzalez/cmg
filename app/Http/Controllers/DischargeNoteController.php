@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesPatientHistory;
 use App\Http\Requests\UpdateDischargeNoteRequest;
 use App\Models\DischargeNote;
 use App\Models\DischargeTemplate;
@@ -12,6 +13,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class DischargeNoteController extends Controller
 {
+    use AuthorizesPatientHistory;
     public function edit(Stay $stay)
     {
         $this->authorizeAccess($stay);
@@ -137,9 +139,8 @@ class DischargeNoteController extends Controller
         if ($user->isAdmin()) return;
 
         if ($user->isDoctor()) {
-            $isAssigned = $stay->currentDoctors()
-                ->where('doctor_id', $user->id)->exists();
-            if (!$isAssigned) abort(403);
+            $isAssigned = $stay->currentDoctors()->where('doctor_id', $user->id)->exists();
+            if (!$isAssigned && !$this->doctorCanAccessPatientHistorically($stay)) abort(403);
             return;
         }
 

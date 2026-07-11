@@ -213,7 +213,7 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
         Route::middleware('role:admin')->group(function () {
 
             Route::resource('rooms', RoomController::class)->except(['show', 'index']);
-            Route::resource('patients', PatientController::class)->except(['edit', 'update', 'create', 'store']);
+            Route::resource('patients', PatientController::class)->except(['edit', 'update', 'create', 'store', 'show']);
 
             Route::delete('/stay-doctors/{stayDoctor}', [StayDoctorController::class, 'destroy'])->name('stayDoctors.destroy');
 
@@ -226,6 +226,11 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
             Route::get('/admin/specialties/{specialty}/edit', [SpecialtyController::class, 'edit'])->name('specialties.edit');
             Route::put('/admin/specialties/{specialty}', [SpecialtyController::class, 'update'])->name('specialties.update');
             Route::post('/admin/specialties/{specialty}/toggle', [SpecialtyController::class, 'toggle'])->name('specialties.toggle');
+        });
+
+        // ─── Expediente del paciente: consulta histórica (admin + doctor) ───────
+        Route::middleware('role:admin,doctor')->group(function () {
+            Route::get('/patients/{patient}', [PatientController::class, 'show'])->name('patients.show');
         });
 
         // ─── Triage + Sala de Espera (admin + doctor + nurse) ────────────────

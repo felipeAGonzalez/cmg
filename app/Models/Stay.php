@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Stay extends Model
 {
@@ -97,6 +98,26 @@ class Stay extends Model
     public function isBirth(): bool
     {
         return $this->birth_parent_stay_id !== null;
+    }
+
+    public function dischargeNote(): HasOne
+    {
+        return $this->hasOne(DischargeNote::class);
+    }
+
+    public function medicalHistory(): HasOne
+    {
+        return $this->hasOne(MedicalHistory::class);
+    }
+
+    public function evolutionNotes(): HasMany
+    {
+        return $this->hasMany(EvolutionNote::class);
+    }
+
+    public function transfusionChecklists(): HasMany
+    {
+        return $this->hasMany(TransfusionChecklist::class);
     }
 
     public function stayDoctors(): HasMany

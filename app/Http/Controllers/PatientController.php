@@ -63,17 +63,45 @@ class PatientController extends Controller
 
     public function show(Patient $patient): View
     {
+        $this->authorizePatientAccess($patient);
+
         $patient->load([
-            'stays'                            => fn($q) => $q->orderBy('admission_date', 'desc'),
+            'stays'                               => fn($q) => $q->orderByDesc('admission_date'),
             'stays.room',
             'stays.stayDoctors.doctor',
             'stays.roomTransfers.fromRoom',
             'stays.roomTransfers.toRoom',
             'stays.roomTransfers.transferredBy',
+            'stays.medicalHistory',
+            'stays.dischargeNote',
+            'stays.evolutionNotes'                => fn($q) => $q->with('attendingDoctor')->orderByDesc('note_datetime'),
+            'stays.transfusionChecklists'         => fn($q) => $q->whereNotNull('finalized_at'),
+            'stays.stayDocuments'                 => fn($q) => $q->where('status', 'completed')->with('document'),
             'triageRecords',
         ]);
 
         return view('patients.show', compact('patient'));
+    }
+
+    protected function authorizePatientAccess(Patient $patient): void
+    {
+        $user = auth()->user();
+
+        if ($user->isAdmin()) return;
+
+        if ($user->isDoctor()) {
+            $hasActiveAssignment = $patient->stays()
+                ->whereNull('discharge_date')
+                ->whereHas('currentDoctors', fn($q) => $q->where('doctor_id', $user->id))
+                ->exists();
+
+            if (!$hasActiveAssignment) {
+                abort(403, 'No tienes pacientes activos asignados para acceder a este historial.');
+            }
+            return;
+        }
+
+        abort(403);
     }
 
     public function edit(Patient $patient): View

@@ -13,15 +13,21 @@ class DoctorController extends Controller
 {
     public function index(Request $request): View
     {
-        $user  = auth()->user();
+        $user   = auth()->user();
         $tab    = $request->query('tab', 'active');
         $search = trim($request->query('search', ''));
 
-        $query = Stay::query()->with(['patient', 'room', 'currentDoctors.doctor']);
+        // pending_note filter: auto-enabled for doctors when entering 'discharged' tab without explicit param
+        $pendingNoteParam = $request->query('pending_note');
+        if ($pendingNoteParam === null && $tab === 'discharged' && $user->isDoctor()) {
+            $pendingNoteParam = '1';
+        }
+        $pendingNote = $pendingNoteParam === '1';
+
+        $query = Stay::query()->with(['patient', 'room', 'currentDoctors.doctor', 'dischargeNote']);
 
         // Scope by role
         if ($user->isDoctor()) {
-            // All stays where this doctor is or was ever assigned
             $query->whereHas('stayDoctors', fn($q) => $q->where('doctor_id', $user->id));
         }
         // Admin and nurse see all stays (no extra filter)
@@ -33,7 +39,24 @@ class DoctorController extends Controller
             $query->whereNotNull('discharge_date');
         }
 
-        // Name search across patient's 3 name columns
+        // Pending discharge note filter (only meaningful in 'discharged' tab)
+        if ($tab === 'discharged' && $pendingNote) {
+            $query->where(function ($q) {
+                $q->whereDoesntHave('dischargeNote')
+                  ->orWhereHas('dischargeNote', function ($sub) {
+                      $sub->whereRaw(
+                          "(CASE WHEN admission_diagnosis IS NULL OR TRIM(admission_diagnosis) = '' THEN 0 ELSE 1 END
+                          + CASE WHEN discharge_diagnosis IS NULL OR TRIM(discharge_diagnosis) = '' THEN 0 ELSE 1 END
+                          + CASE WHEN clinical_summary IS NULL OR TRIM(clinical_summary) = '' THEN 0 ELSE 1 END
+                          + CASE WHEN physical_examination_at_discharge IS NULL OR TRIM(physical_examination_at_discharge) = '' THEN 0 ELSE 1 END
+                          + CASE WHEN plan_and_treatment_at_discharge IS NULL OR TRIM(plan_and_treatment_at_discharge) = '' THEN 0 ELSE 1 END
+                          + CASE WHEN prognosis IS NULL OR TRIM(prognosis) = '' THEN 0 ELSE 1 END) < 6"
+                      );
+                  });
+            });
+        }
+
+        // Name search
         if ($search !== '') {
             $query->whereHas('patient', function ($q) use ($search) {
                 $q->where('name', 'like', '%' . $search . '%')
@@ -53,8 +76,10 @@ class DoctorController extends Controller
             'stays'           => $stays,
             'tab'             => $tab,
             'search'          => $search,
+            'pendingNote'     => $pendingNote,
             'activeCount'     => $this->countStays($user, 'active'),
             'dischargedCount' => $this->countStays($user, 'discharged'),
+            'pendingCount'    => $this->countPendingDischargeNotes($user),
             'doctor'          => $user,
         ]);
     }
@@ -133,6 +158,31 @@ class DoctorController extends Controller
         } else {
             $query->whereNotNull('discharge_date');
         }
+
+        return $query->count();
+    }
+
+    protected function countPendingDischargeNotes(User $user): int
+    {
+        $query = Stay::query()->whereNotNull('discharge_date');
+
+        if ($user->isDoctor()) {
+            $query->whereHas('stayDoctors', fn($q) => $q->where('doctor_id', $user->id));
+        }
+
+        $query->where(function ($q) {
+            $q->whereDoesntHave('dischargeNote')
+              ->orWhereHas('dischargeNote', function ($sub) {
+                  $sub->whereRaw(
+                      "(CASE WHEN admission_diagnosis IS NULL OR TRIM(admission_diagnosis) = '' THEN 0 ELSE 1 END
+                      + CASE WHEN discharge_diagnosis IS NULL OR TRIM(discharge_diagnosis) = '' THEN 0 ELSE 1 END
+                      + CASE WHEN clinical_summary IS NULL OR TRIM(clinical_summary) = '' THEN 0 ELSE 1 END
+                      + CASE WHEN physical_examination_at_discharge IS NULL OR TRIM(physical_examination_at_discharge) = '' THEN 0 ELSE 1 END
+                      + CASE WHEN plan_and_treatment_at_discharge IS NULL OR TRIM(plan_and_treatment_at_discharge) = '' THEN 0 ELSE 1 END
+                      + CASE WHEN prognosis IS NULL OR TRIM(prognosis) = '' THEN 0 ELSE 1 END) < 6"
+                  );
+              });
+        });
 
         return $query->count();
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesPatientHistory;
 use App\Http\Requests\UpdateFrontSheetRequest;
 use App\Models\Document;
 use App\Models\Stay;
@@ -13,6 +14,7 @@ use Illuminate\View\View;
 
 class FrontSheetController extends Controller
 {
+    use AuthorizesPatientHistory;
     private const CODE = 'front_sheet';
 
     /**
@@ -116,11 +118,9 @@ class FrontSheetController extends Controller
 
         if ($user->isDoctor()) {
             $isAssigned = $stay->currentDoctors()->where('doctor_id', $user->id)->exists();
-
-            if (! $isAssigned) {
+            if (!$isAssigned && !$this->doctorCanAccessPatientHistorically($stay)) {
                 abort(403, 'No tienes acceso a este paciente.');
             }
-
             return;
         }
 
