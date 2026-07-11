@@ -105,7 +105,7 @@
 
                 @if(Auth::user()->isAdmin() || Auth::user()->isDoctor())
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle {{ request()->routeIs('medicalHistoryTemplates.*') || request()->routeIs('evolutionTemplates.*') || request()->routeIs('dischargeTemplates.*') ? 'active fw-semibold' : '' }}"
+                    <a class="nav-link dropdown-toggle {{ request()->routeIs('medicalHistoryTemplates.*') || request()->routeIs('evolutionTemplates.*') || request()->routeIs('dischargeTemplates.*') || request()->routeIs('transfusionNoteTemplates.*') || request()->routeIs('postSurgicalNoteTemplates.*') ? 'active fw-semibold' : '' }}"
                        href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-journal-text me-1"></i>{{ Auth::user()->isAdmin() ? 'Plantillas' : 'Mis plantillas' }}
                     </a>
@@ -126,6 +126,18 @@
                             <a class="dropdown-item {{ request()->routeIs('dischargeTemplates.*') ? 'active' : '' }}"
                                href="{{ route('dischargeTemplates.index') }}">
                                 <i class="bi bi-box-arrow-right me-1"></i> Plantillas de Alta
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {{ request()->routeIs('transfusionNoteTemplates.*') ? 'active' : '' }}"
+                               href="{{ route('transfusionNoteTemplates.index') }}">
+                                <i class="bi bi-droplet-half me-1"></i> Plantillas de Nota Transfusional
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {{ request()->routeIs('postSurgicalNoteTemplates.*') ? 'active' : '' }}"
+                               href="{{ route('postSurgicalNoteTemplates.index') }}">
+                                <i class="bi bi-scissors me-1"></i> Plantillas de Nota Postquirúrgica
                             </a>
                         </li>
                     </ul>

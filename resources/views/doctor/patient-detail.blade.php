@@ -511,6 +511,80 @@
                     </div>
                 </div>
             </div>
+
+            {{-- Card de Notas Transfusionales --}}
+            @php
+                $transfusionNoteCount = \App\Models\TransfusionNote::where('stay_id', $stay->id)->count();
+            @endphp
+            <div class="card mb-3 mt-3">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-droplet-half" style="font-size:1.5rem; color:#E91E63;"></i>
+                            <div>
+                                <h6 class="mb-0">Notas Transfusionales</h6>
+                                <small class="text-muted">
+                                    @if($transfusionNoteCount === 0)
+                                        Sin notas registradas.
+                                    @else
+                                        {{ $transfusionNoteCount }}
+                                        {{ $transfusionNoteCount === 1 ? 'nota registrada' : 'notas registradas' }}
+                                    @endif
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-1">
+                        <a href="{{ route('transfusionNotes.index', $stay) }}"
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-list"></i> Ver notas
+                        </a>
+                        @if($stay->discharge_date === null)
+                            <a href="{{ route('transfusionNotes.create', $stay) }}"
+                               class="btn btn-sm btn-primary">
+                                <i class="bi bi-plus-circle"></i> Nueva
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            {{-- Card de Notas Postquirúrgicas --}}
+            @php
+                $postSurgicalNoteCount = \App\Models\PostSurgicalNote::where('stay_id', $stay->id)->count();
+            @endphp
+            <div class="card mb-3 mt-3">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-scissors" style="font-size:1.5rem; color:#E91E63;"></i>
+                            <div>
+                                <h6 class="mb-0">Notas Postquirúrgicas</h6>
+                                <small class="text-muted">
+                                    @if($postSurgicalNoteCount === 0)
+                                        Sin notas registradas.
+                                    @else
+                                        {{ $postSurgicalNoteCount }}
+                                        {{ $postSurgicalNoteCount === 1 ? 'nota registrada' : 'notas registradas' }}
+                                    @endif
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-1">
+                        <a href="{{ route('postSurgicalNotes.index', $stay) }}"
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-list"></i> Ver notas
+                        </a>
+                        @if($stay->discharge_date === null)
+                            <a href="{{ route('postSurgicalNotes.create', $stay) }}"
+                               class="btn btn-sm btn-primary">
+                                <i class="bi bi-plus-circle"></i> Nueva
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

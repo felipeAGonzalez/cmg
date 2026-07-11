@@ -30,6 +30,10 @@ use App\Http\Controllers\EvolutionNoteController;
 use App\Http\Controllers\MedicalHistoryTemplateController;
 use App\Http\Controllers\EvolutionTemplateController;
 use App\Http\Controllers\DischargeTemplateController;
+use App\Http\Controllers\TransfusionNoteController;
+use App\Http\Controllers\TransfusionNoteTemplateController;
+use App\Http\Controllers\PostSurgicalNoteController;
+use App\Http\Controllers\PostSurgicalNoteTemplateController;
 use App\Http\Controllers\TriageRecordController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WaitingRoomController;
@@ -277,6 +281,30 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
             Route::delete('/evolution-notes/{note}', [EvolutionNoteController::class, 'destroy'])->name('evolutionNotes.destroy');
         });
 
+        // ─── Notas Postquirúrgicas (admin + doctor + nurse) ─────────────────
+        Route::middleware('role:admin,doctor,nurse')->group(function () {
+            Route::get('/stays/{stay}/post-surgical-notes', [PostSurgicalNoteController::class, 'index'])->name('postSurgicalNotes.index');
+            Route::get('/stays/{stay}/post-surgical-notes/create', [PostSurgicalNoteController::class, 'create'])->name('postSurgicalNotes.create');
+            Route::post('/stays/{stay}/post-surgical-notes', [PostSurgicalNoteController::class, 'store'])->name('postSurgicalNotes.store');
+            Route::get('/post-surgical-notes/{note}', [PostSurgicalNoteController::class, 'show'])->name('postSurgicalNotes.show');
+            Route::get('/post-surgical-notes/{note}/edit', [PostSurgicalNoteController::class, 'edit'])->name('postSurgicalNotes.edit');
+            Route::put('/post-surgical-notes/{note}', [PostSurgicalNoteController::class, 'update'])->name('postSurgicalNotes.update');
+            Route::get('/post-surgical-notes/{note}/pdf', [PostSurgicalNoteController::class, 'pdf'])->name('postSurgicalNotes.pdf');
+            Route::delete('/post-surgical-notes/{note}', [PostSurgicalNoteController::class, 'destroy'])->name('postSurgicalNotes.destroy');
+        });
+
+        // ─── Notas Transfusionales (admin + doctor + nurse) ──────────────────
+        Route::middleware('role:admin,doctor,nurse')->group(function () {
+            Route::get('/stays/{stay}/transfusion-notes', [TransfusionNoteController::class, 'index'])->name('transfusionNotes.index');
+            Route::get('/stays/{stay}/transfusion-notes/create', [TransfusionNoteController::class, 'create'])->name('transfusionNotes.create');
+            Route::post('/stays/{stay}/transfusion-notes', [TransfusionNoteController::class, 'store'])->name('transfusionNotes.store');
+            Route::get('/transfusion-notes/{note}', [TransfusionNoteController::class, 'show'])->name('transfusionNotes.show');
+            Route::get('/transfusion-notes/{note}/edit', [TransfusionNoteController::class, 'edit'])->name('transfusionNotes.edit');
+            Route::put('/transfusion-notes/{note}', [TransfusionNoteController::class, 'update'])->name('transfusionNotes.update');
+            Route::get('/transfusion-notes/{note}/pdf', [TransfusionNoteController::class, 'pdf'])->name('transfusionNotes.pdf');
+            Route::delete('/transfusion-notes/{note}', [TransfusionNoteController::class, 'destroy'])->name('transfusionNotes.destroy');
+        });
+
         // ─── Transfusiones (admin + doctor + nurse) ────────────────────────
         Route::middleware('role:admin,doctor,nurse')->group(function () {
             Route::get('/stays/{stay}/transfusion-checklists', [TransfusionChecklistController::class, 'index'])->name('transfusionChecklists.index');
@@ -312,6 +340,28 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
             Route::post('/evolution-templates/{template}/duplicate', [EvolutionTemplateController::class, 'duplicate'])->name('evolutionTemplates.duplicate');
             Route::delete('/evolution-templates/{template}', [EvolutionTemplateController::class, 'destroy'])->name('evolutionTemplates.destroy');
             Route::get('/evolution-templates/{template}/content', [EvolutionTemplateController::class, 'content'])->name('evolutionTemplates.content');
+
+            // Nota Transfusional
+            Route::get('/transfusion-note-templates', [TransfusionNoteTemplateController::class, 'index'])->name('transfusionNoteTemplates.index');
+            Route::get('/transfusion-note-templates/create', [TransfusionNoteTemplateController::class, 'create'])->name('transfusionNoteTemplates.create');
+            Route::post('/transfusion-note-templates', [TransfusionNoteTemplateController::class, 'store'])->name('transfusionNoteTemplates.store');
+            Route::get('/transfusion-note-templates/{template}', [TransfusionNoteTemplateController::class, 'show'])->name('transfusionNoteTemplates.show');
+            Route::get('/transfusion-note-templates/{template}/edit', [TransfusionNoteTemplateController::class, 'edit'])->name('transfusionNoteTemplates.edit');
+            Route::put('/transfusion-note-templates/{template}', [TransfusionNoteTemplateController::class, 'update'])->name('transfusionNoteTemplates.update');
+            Route::post('/transfusion-note-templates/{template}/duplicate', [TransfusionNoteTemplateController::class, 'duplicate'])->name('transfusionNoteTemplates.duplicate');
+            Route::delete('/transfusion-note-templates/{template}', [TransfusionNoteTemplateController::class, 'destroy'])->name('transfusionNoteTemplates.destroy');
+            Route::get('/transfusion-note-templates/{template}/content', [TransfusionNoteTemplateController::class, 'content'])->name('transfusionNoteTemplates.content');
+
+            // Nota Postquirúrgica
+            Route::get('/post-surgical-note-templates', [PostSurgicalNoteTemplateController::class, 'index'])->name('postSurgicalNoteTemplates.index');
+            Route::get('/post-surgical-note-templates/create', [PostSurgicalNoteTemplateController::class, 'create'])->name('postSurgicalNoteTemplates.create');
+            Route::post('/post-surgical-note-templates', [PostSurgicalNoteTemplateController::class, 'store'])->name('postSurgicalNoteTemplates.store');
+            Route::get('/post-surgical-note-templates/{template}', [PostSurgicalNoteTemplateController::class, 'show'])->name('postSurgicalNoteTemplates.show');
+            Route::get('/post-surgical-note-templates/{template}/edit', [PostSurgicalNoteTemplateController::class, 'edit'])->name('postSurgicalNoteTemplates.edit');
+            Route::put('/post-surgical-note-templates/{template}', [PostSurgicalNoteTemplateController::class, 'update'])->name('postSurgicalNoteTemplates.update');
+            Route::post('/post-surgical-note-templates/{template}/duplicate', [PostSurgicalNoteTemplateController::class, 'duplicate'])->name('postSurgicalNoteTemplates.duplicate');
+            Route::delete('/post-surgical-note-templates/{template}', [PostSurgicalNoteTemplateController::class, 'destroy'])->name('postSurgicalNoteTemplates.destroy');
+            Route::get('/post-surgical-note-templates/{template}/content', [PostSurgicalNoteTemplateController::class, 'content'])->name('postSurgicalNoteTemplates.content');
 
             // Alta
             Route::get('/discharge-templates', [DischargeTemplateController::class, 'index'])->name('dischargeTemplates.index');
