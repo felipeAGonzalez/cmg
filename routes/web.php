@@ -34,6 +34,8 @@ use App\Http\Controllers\TransfusionNoteController;
 use App\Http\Controllers\TransfusionNoteTemplateController;
 use App\Http\Controllers\PostSurgicalNoteController;
 use App\Http\Controllers\PostSurgicalNoteTemplateController;
+use App\Http\Controllers\AnesthesiaNoteController;
+use App\Http\Controllers\AnesthesiaNoteTemplateController;
 use App\Http\Controllers\TriageRecordController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WaitingRoomController;
@@ -293,6 +295,18 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
             Route::delete('/post-surgical-notes/{note}', [PostSurgicalNoteController::class, 'destroy'])->name('postSurgicalNotes.destroy');
         });
 
+        // ─── Notas de Anestesia (admin + doctor + nurse) ────────────────────
+        Route::middleware('role:admin,doctor,nurse')->group(function () {
+            Route::get('/stays/{stay}/anesthesia-notes', [AnesthesiaNoteController::class, 'index'])->name('anesthesiaNotes.index');
+            Route::get('/stays/{stay}/anesthesia-notes/create', [AnesthesiaNoteController::class, 'create'])->name('anesthesiaNotes.create');
+            Route::post('/stays/{stay}/anesthesia-notes', [AnesthesiaNoteController::class, 'store'])->name('anesthesiaNotes.store');
+            Route::get('/anesthesia-notes/{note}', [AnesthesiaNoteController::class, 'show'])->name('anesthesiaNotes.show');
+            Route::get('/anesthesia-notes/{note}/edit', [AnesthesiaNoteController::class, 'edit'])->name('anesthesiaNotes.edit');
+            Route::put('/anesthesia-notes/{note}', [AnesthesiaNoteController::class, 'update'])->name('anesthesiaNotes.update');
+            Route::get('/anesthesia-notes/{note}/pdf', [AnesthesiaNoteController::class, 'pdf'])->name('anesthesiaNotes.pdf');
+            Route::delete('/anesthesia-notes/{note}', [AnesthesiaNoteController::class, 'destroy'])->name('anesthesiaNotes.destroy');
+        });
+
         // ─── Notas Transfusionales (admin + doctor + nurse) ──────────────────
         Route::middleware('role:admin,doctor,nurse')->group(function () {
             Route::get('/stays/{stay}/transfusion-notes', [TransfusionNoteController::class, 'index'])->name('transfusionNotes.index');
@@ -362,6 +376,17 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
             Route::post('/post-surgical-note-templates/{template}/duplicate', [PostSurgicalNoteTemplateController::class, 'duplicate'])->name('postSurgicalNoteTemplates.duplicate');
             Route::delete('/post-surgical-note-templates/{template}', [PostSurgicalNoteTemplateController::class, 'destroy'])->name('postSurgicalNoteTemplates.destroy');
             Route::get('/post-surgical-note-templates/{template}/content', [PostSurgicalNoteTemplateController::class, 'content'])->name('postSurgicalNoteTemplates.content');
+
+            // Anestesia
+            Route::get('/anesthesia-note-templates', [AnesthesiaNoteTemplateController::class, 'index'])->name('anesthesiaNoteTemplates.index');
+            Route::get('/anesthesia-note-templates/create', [AnesthesiaNoteTemplateController::class, 'create'])->name('anesthesiaNoteTemplates.create');
+            Route::post('/anesthesia-note-templates', [AnesthesiaNoteTemplateController::class, 'store'])->name('anesthesiaNoteTemplates.store');
+            Route::get('/anesthesia-note-templates/{template}', [AnesthesiaNoteTemplateController::class, 'show'])->name('anesthesiaNoteTemplates.show');
+            Route::get('/anesthesia-note-templates/{template}/edit', [AnesthesiaNoteTemplateController::class, 'edit'])->name('anesthesiaNoteTemplates.edit');
+            Route::put('/anesthesia-note-templates/{template}', [AnesthesiaNoteTemplateController::class, 'update'])->name('anesthesiaNoteTemplates.update');
+            Route::post('/anesthesia-note-templates/{template}/duplicate', [AnesthesiaNoteTemplateController::class, 'duplicate'])->name('anesthesiaNoteTemplates.duplicate');
+            Route::delete('/anesthesia-note-templates/{template}', [AnesthesiaNoteTemplateController::class, 'destroy'])->name('anesthesiaNoteTemplates.destroy');
+            Route::get('/anesthesia-note-templates/{template}/content', [AnesthesiaNoteTemplateController::class, 'content'])->name('anesthesiaNoteTemplates.content');
 
             // Alta
             Route::get('/discharge-templates', [DischargeTemplateController::class, 'index'])->name('dischargeTemplates.index');

@@ -9,6 +9,7 @@ use App\Models\MedicalHistory;
 use App\Models\MedicalHistoryTemplate;
 use App\Models\Stay;
 use App\Models\StayDocument;
+use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class MedicalHistoryController extends Controller
@@ -40,12 +41,21 @@ class MedicalHistoryController extends Controller
         $templates = $templatesQuery->orderBy('name')->get();
 
         return view('medical-histories.edit', [
-            'stay' => $stay,
-            'patient' => $stay->patient,
-            'history' => $history,
-            'templates' => $templates,
-            'sections' => config('medical_template_sections'),
+            'stay'             => $stay,
+            'patient'          => $stay->patient,
+            'history'          => $history,
+            'templates'        => $templates,
+            'sections'         => config('medical_template_sections'),
             'availableDoctors' => $this->availableDoctorsForUser($stay),
+            'simpleConfigs'    => [
+                'nonPathologicalChecks' => config('medical_history_simple_non_pathological_checks'),
+                'pathologicalChecks'    => config('medical_history_simple_pathological_checks'),
+                'reviewOfSystems'       => config('medical_history_simple_review_of_systems'),
+                'painSigns'             => config('medical_history_simple_pain_signs'),
+                'examBySystem'          => config('medical_history_simple_exam_by_system'),
+                'gynecoVaccines'        => config('medical_history_simple_gyneco_vaccines'),
+            ],
+            'doctors' => User::where('role', 'doctor')->orderBy('name')->get(),
         ]);
     }
 
@@ -60,6 +70,7 @@ class MedicalHistoryController extends Controller
 
         $user = auth()->user();
         $data = $request->validated();
+        $data['mode'] = $request->input('mode', 'complete');
 
         $history = MedicalHistory::firstOrNew(['stay_id' => $stay->id]);
 
@@ -104,12 +115,26 @@ class MedicalHistoryController extends Controller
         $stay->load(['patient', 'room', 'currentDoctors.doctor.specialties']);
         $history->load('attendingDoctor.specialties');
 
-        $pdf = Pdf::loadView('pdfs.medical-history.full', [
-            'stay' => $stay,
-            'patient' => $stay->patient,
-            'history' => $history,
-            'sections' => config('medical_template_sections'),
-            'generatedAt' => now(),
+        $history->load('elaboratedBy');
+
+        $viewName = $history->isSimpleMode()
+            ? 'pdfs.medical-history.simple'
+            : 'pdfs.medical-history.full';
+
+        $pdf = Pdf::loadView($viewName, [
+            'stay'          => $stay,
+            'patient'       => $stay->patient,
+            'history'       => $history,
+            'sections'      => config('medical_template_sections'),
+            'simpleConfigs' => [
+                'nonPathologicalChecks' => config('medical_history_simple_non_pathological_checks'),
+                'pathologicalChecks'    => config('medical_history_simple_pathological_checks'),
+                'reviewOfSystems'       => config('medical_history_simple_review_of_systems'),
+                'painSigns'             => config('medical_history_simple_pain_signs'),
+                'examBySystem'          => config('medical_history_simple_exam_by_system'),
+                'gynecoVaccines'        => config('medical_history_simple_gyneco_vaccines'),
+            ],
+            'generatedAt'   => now(),
         ])
         ->setPaper('letter', 'portrait')
         ->setOptions([

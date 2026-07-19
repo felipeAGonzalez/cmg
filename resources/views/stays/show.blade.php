@@ -650,6 +650,37 @@
             </div>
         </div>
 
+        {{-- Card de Notas de Anestesia --}}
+        @php
+            $anesthesiaNoteCount = \App\Models\AnesthesiaNote::where('stay_id', $stay->id)->count();
+        @endphp
+        <div class="card mb-3">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-lungs" style="font-size:1.5rem; color:#E91E63;"></i>
+                    <strong>Notas de Anestesia</strong>
+                    <small class="text-muted d-block">
+                        @if($anesthesiaNoteCount === 0)
+                            Sin notas registradas.
+                        @else
+                            {{ $anesthesiaNoteCount }}
+                            {{ $anesthesiaNoteCount === 1 ? 'nota registrada' : 'notas registradas' }}
+                        @endif
+                    </small>
+                </div>
+                <div class="d-flex gap-1">
+                    <a href="{{ route('anesthesiaNotes.index', $stay) }}"
+                       class="btn btn-sm btn-outline-primary">Ver notas</a>
+                    @if($stay->discharge_date === null)
+                        <a href="{{ route('anesthesiaNotes.create', $stay) }}"
+                           class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus-circle"></i> Nueva
+                        </a>
+                    @endif
+                </div>
+            </div>
+        </div>
+
         {{-- ────────── TAB: Historial ────────── --}}
         <div class="tab-pane fade" id="history" role="tabpanel">
 
