@@ -2,27 +2,31 @@ FROM php:8.3-apache
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-
 RUN apt-get update && apt-get install -y \
+    git \
+    unzip \
+    zip \
+    curl \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
-    zip \
-    unzip \
-    git \
-    curl \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+    && docker-php-ext-install pdo_mysql mbstring exif bcmath gd
 
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-COPY . /var/www/html
+WORKDIR /var/www/html
+
+COPY . .
+
+RUN composer install --no-dev --optimize-autoloader
 
 RUN a2enmod rewrite
 
-EXPOSE 80
+RUN sed -i 's!/var/www/html!/var/www/html/public!g' \
+    /etc/apache2/sites-available/000-default.conf
 
-WORKDIR /var/www/html
+RUN chown -R www-data:www-data storage bootstrap/cache
+
+EXPOSE 80
 
 CMD ["apache2-foreground"]
