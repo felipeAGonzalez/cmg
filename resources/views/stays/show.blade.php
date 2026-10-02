@@ -194,11 +194,16 @@
                 @else
                     <div class="d-flex flex-column gap-3">
                         @foreach($stay->instructions as $instruction)
-                        <div class="border rounded-3 p-3" style="background:#f8f9fa;">
+                        <div class="border rounded-3 p-3 {{ $loop->first ? 'border-warning border-2 bg-warning-subtle shadow-sm' : 'bg-light' }}">
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <span class="fw-semibold small">
                                     <i class="bi bi-person-circle me-1 text-primary"></i>
                                     {{ $instruction->doctor->fullName() }}
+                                    @if($loop->first)
+                                        <span class="badge bg-warning text-dark ms-2">
+                                            <i class="bi bi-bell-fill me-1"></i>Indicación más reciente
+                                        </span>
+                                    @endif
                                 </span>
                                 <span class="text-muted small">
                                     {{ $instruction->created_at->format('d/m/Y H:i') }}
