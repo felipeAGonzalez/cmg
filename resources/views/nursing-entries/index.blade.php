@@ -78,9 +78,11 @@
                         </thead>
                         <tbody>
                             @foreach($entries as $entry)
-                            <tr>
+                            <tr class="{{ \App\Support\Shift::tableClass($entry->shift) }}">
                                 <td class="text-nowrap small">{{ $entry->recorded_at->format('d/m/Y H:i') }}</td>
-                                <td class="text-nowrap small text-muted">{{ $entry->shiftLabel() }}</td>
+                                <td class="text-nowrap small">
+                                    <span class="badge {{ \App\Support\Shift::badgeClass($entry->shift) }}">{{ $entry->shiftLabel() }}</span>
+                                </td>
                                 <td>
                                     <span class="badge {{ $entry->categoryBadgeClass() }}">
                                         <i class="bi {{ $entry->categoryIcon() }} me-1"></i>{{ $entry->categoryLabel() }}

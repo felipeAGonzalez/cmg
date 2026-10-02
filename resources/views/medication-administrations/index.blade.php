@@ -34,6 +34,40 @@
     @if(session('success'))<div class="alert alert-success border-0 shadow-sm">{{ session('success') }}</div>@endif
     @if(session('error'))<div class="alert alert-danger border-0 shadow-sm">{{ session('error') }}</div>@endif
 
+    @if($activeOrders->isNotEmpty())
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-header bg-white">
+            <h6 class="fw-bold text-primary mb-0"><i class="bi bi-clock-history me-1"></i>Próximas aplicaciones</h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-2">
+                @foreach($activeOrders as $order)
+                    @php
+                        $scheduleTimes = $order->dailyScheduleTimes();
+                        $nextScheduledAt = $order->nextScheduledAdministrationAt();
+                    @endphp
+                    @if($order->frequencyIntervalHours())
+                    <div class="col-md-6">
+                        <div class="border rounded p-2 h-100">
+                            <div class="fw-semibold">{{ $order->medication_name }} · {{ $order->dose }}</div>
+                            <div class="small text-muted">{{ $order->frequencyLabel() }}</div>
+                            @if($scheduleTimes)
+                                <div class="small mt-1"><strong>Horario:</strong> {{ implode(' · ', $scheduleTimes) }}</div>
+                                @if($nextScheduledAt)
+                                    <div class="small text-primary"><strong>Próxima:</strong> {{ $nextScheduledAt->format('d/m/Y H:i') }}</div>
+                                @endif
+                            @else
+                                <div class="small text-muted mt-1">El horario se calculará después de la primera aplicación.</div>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
+                @endforeach
+            </div>
+        </div>
+    </div>
+    @endif
+
     <div class="card border-0 shadow-sm">
         <div class="card-body">
             @if($administrations->isEmpty())

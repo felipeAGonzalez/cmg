@@ -3,13 +3,12 @@
     Variables opcionales:
       $prefix   : para diferenciar ids entre modales (los name no llevan prefijo
                   porque cada modal es un form independiente).
-      $showTime : muestra la hora de la toma y la glucemia. true al registrar
-                  una toma nueva; false al editar (la hora es inmutable).
+      $showTime : muestra la hora de la toma. true al registrar una toma
+                  nueva; false al editar (la hora es inmutable).
 --}}
 @php
     $prefix   = $prefix ?? '';
     $showTime = $showTime ?? true;
-    $activeGlucoseOrder = $showTime ? $stay->activeGlucoseMonitoringOrder() : null;
 @endphp
 
 @if($showTime)
@@ -58,22 +57,3 @@
                class="form-control" value="{{ old('notes') }}">
     </div>
 </div>
-
-@if($activeGlucoseOrder)
-<div class="mt-3 bg-info-subtle p-3 rounded">
-    <label for="{{ $prefix }}glucose_mg_dl" class="form-label fw-semibold small mb-1">
-        <i class="bi bi-droplet"></i> Glucemia capilar (mg/dL)
-        <span class="text-muted fw-normal">— Indicado por Dr(a). {{ $activeGlucoseOrder->prescribedBy?->fullName() ?? '—' }}</span>
-    </label>
-    @if($activeGlucoseOrder->schedule_description)
-        <small class="d-block text-muted mb-2">Esquema: {{ $activeGlucoseOrder->schedule_description }}</small>
-    @endif
-    <input type="number" id="{{ $prefix }}glucose_mg_dl" name="glucose_mg_dl"
-           min="20" max="800" value="{{ old('glucose_mg_dl') }}"
-           class="form-control @error('glucose_mg_dl') is-invalid @enderror" placeholder="Ej. 95">
-    @error('glucose_mg_dl')<div class="invalid-feedback">{{ $message }}</div>@enderror
-    <small class="text-muted">
-        Opcional. Si capturas un valor, se registrará como lectura de glucemia asociada a esta toma.
-    </small>
-</div>
-@endif

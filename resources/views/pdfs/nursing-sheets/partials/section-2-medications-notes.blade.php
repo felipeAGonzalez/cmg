@@ -45,7 +45,12 @@
 
                 <table style="width:100%; font-size:9px; border-collapse:collapse;">
                     <tr>
-                        <td style="padding:2px 4px; width:50%;"><strong>Vía:</strong> {{ $order->routeLabel() }} · <strong>Frecuencia:</strong> {{ $order->frequencyLabel() }}</td>
+                        <td style="padding:2px 4px; width:50%;">
+                            <strong>Vía:</strong> {{ $order->routeLabel() }} · <strong>Frecuencia:</strong> {{ $order->frequencyLabel() }}
+                            @if($order->dailyScheduleTimes())
+                                <br><strong>Horario:</strong> {{ implode(' · ', $order->dailyScheduleTimes()) }}
+                            @endif
+                        </td>
                         <td style="padding:2px 4px; width:50%;"><strong>Inicio:</strong> {{ $order->start_date->format('d/m/Y') }}@if($order->duration_days) · <strong>Duración:</strong> {{ $order->duration_days }} día(s)@endif</td>
                     </tr>
                     <tr>
@@ -91,6 +96,9 @@
                 </div>
                 <div style="padding:4px 8px; font-size:9px; background:#FAFAFA;">
                     {{ $order->routeLabel() }} · {{ $order->frequencyLabel() }} · Inicio {{ $order->start_date->format('d/m/Y') }}@if($order->duration_days) · {{ $order->duration_days }} día(s)@endif · Dr(a). {{ $order->prescribedBy?->fullName() ?? '—' }}@if($order->prescribedBy?->professional_license) (Céd. {{ $order->prescribedBy->professional_license }})@endif
+                    @if($order->dailyScheduleTimes())
+                        <br><strong>Horario:</strong> {{ implode(' · ', $order->dailyScheduleTimes()) }}
+                    @endif
                     @if($order->indications)
                         <br><em>{{ $order->indications }}</em>
                     @endif
@@ -138,6 +146,7 @@
                 <thead>
                     <tr>
                         <th class="center" style="width:42px;">Hora</th>
+                        <th class="center" style="width:54px;">Turno</th>
                         <th style="width:120px;">Categoría</th>
                         <th>Descripción</th>
                         <th style="width:110px;">Enfermera</th>
@@ -145,8 +154,11 @@
                 </thead>
                 <tbody>
                     @foreach($entries as $entry)
-                        <tr>
+                        <tr class="{{ \App\Support\Shift::pdfClass($entry->shift) }}">
                             <td class="center">{{ $entry->recorded_at->format('H:i') }}</td>
+                            <td class="center">
+                                <span class="shift-label {{ \App\Support\Shift::pdfClass($entry->shift) }}">{{ $entry->shiftLabel() }}</span>
+                            </td>
                             <td>{{ $entry->categoryLabel() }}</td>
                             <td>{{ $entry->description }}</td>
                             <td>{{ $entry->recordedBy?->fullName() ?? '—' }}@if($entry->recordedBy?->professional_license) <span style="font-size:7px;">(Céd. {{ $entry->recordedBy->professional_license }})</span>@endif</td>

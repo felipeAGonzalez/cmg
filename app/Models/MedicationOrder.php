@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -10,9 +11,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MedicationOrder extends Model
 {
-    public const STATUS_ACTIVE    = 'active';
+    public const STATUS_ACTIVE = 'active';
+
     public const STATUS_SUSPENDED = 'suspended';
-    public const STATUS_FINISHED  = 'finished';
+
+    public const STATUS_FINISHED = 'finished';
 
     protected $fillable = [
         'stay_id', 'medication_name', 'dose', 'route', 'route_other',
@@ -24,7 +27,7 @@ class MedicationOrder extends Model
     protected function casts(): array
     {
         return [
-            'start_date'   => 'date',
+            'start_date' => 'date',
             'suspended_at' => 'datetime',
         ];
     }
@@ -143,7 +146,7 @@ class MedicationOrder extends Model
     }
 
     /** Fecha de finalización programada. Null si sin duración. */
-    public function endDate(): ?\Carbon\Carbon
+    public function endDate(): ?Carbon
     {
         if ($this->duration_days === null) {
             return null;
@@ -170,21 +173,104 @@ class MedicationOrder extends Model
         return config('medication_frequencies')[$this->frequency] ?? $this->frequency;
     }
 
+    /** Intervalo programable de la frecuencia; null para PRN, dosis única u otra. */
+    public function frequencyIntervalHours(): ?int
+    {
+        return match ($this->frequency) {
+            'every_4h' => 4,
+            'every_6h' => 6,
+            'every_8h' => 8,
+            'every_12h' => 12,
+            'every_24h' => 24,
+            default => null,
+        };
+    }
+
+    /** Primera aplicación efectiva que sirve como ancla del horario. */
+    public function scheduleAnchor(): ?Carbon
+    {
+        $firstAdministration = $this->relationLoaded('administrations')
+            ? $this->administrations
+                ->where('status', MedicationAdministration::STATUS_ADMINISTERED)
+                ->sortBy('administered_at')
+                ->first()
+            : $this->administrations()
+                ->where('status', MedicationAdministration::STATUS_ADMINISTERED)
+                ->oldest('administered_at')
+                ->first();
+
+        return $firstAdministration?->administered_at?->copy();
+    }
+
+    /**
+     * Horas recurrentes dentro de un ciclo de 24 horas, ancladas a la primera
+     * aplicación. Ejemplo: cada 8 h desde 07:00 => 07:00, 15:00 y 23:00.
+     *
+     * @return array<int, string>
+     */
+    public function dailyScheduleTimes(): array
+    {
+        $interval = $this->frequencyIntervalHours();
+        $anchor = $this->scheduleAnchor();
+
+        if (! $interval || ! $anchor) {
+            return [];
+        }
+
+        $times = [];
+        $occurrences = intdiv(24, $interval);
+
+        for ($index = 0; $index < $occurrences; $index++) {
+            $times[] = $anchor->copy()->addHours($index * $interval)->format('H:i');
+        }
+
+        return $times;
+    }
+
+    /** Próxima hora programada posterior al momento de referencia. */
+    public function nextScheduledAdministrationAt(?Carbon $reference = null): ?Carbon
+    {
+        $interval = $this->frequencyIntervalHours();
+        $anchor = $this->scheduleAnchor();
+
+        if (! $interval || ! $anchor || ! $this->isActive()) {
+            return null;
+        }
+
+        $reference ??= now();
+
+        if ($reference->lessThan($anchor)) {
+            return $anchor;
+        }
+
+        $elapsedMinutes = $anchor->diffInMinutes($reference);
+        $intervalMinutes = $interval * 60;
+        $completedIntervals = intdiv((int) $elapsedMinutes, $intervalMinutes) + 1;
+
+        $nextScheduledAt = $anchor->copy()->addHours($completedIntervals * $interval);
+
+        if ($this->endDate() && $nextScheduledAt->greaterThan($this->endDate()->endOfDay())) {
+            return null;
+        }
+
+        return $nextScheduledAt;
+    }
+
     public function statusLabel(): string
     {
         return [
-            self::STATUS_ACTIVE    => 'Activa',
+            self::STATUS_ACTIVE => 'Activa',
             self::STATUS_SUSPENDED => 'Suspendida',
-            self::STATUS_FINISHED  => 'Finalizada',
+            self::STATUS_FINISHED => 'Finalizada',
         ][$this->status()];
     }
 
     public function statusBadgeClass(): string
     {
         return [
-            self::STATUS_ACTIVE    => 'bg-success',
+            self::STATUS_ACTIVE => 'bg-success',
             self::STATUS_SUSPENDED => 'bg-warning text-dark',
-            self::STATUS_FINISHED  => 'bg-secondary',
+            self::STATUS_FINISHED => 'bg-secondary',
         ][$this->status()];
     }
 

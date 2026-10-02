@@ -7,11 +7,15 @@
     $canEdit = ($user->isAdmin() || $user->isNurse()) && $stay->isActive();
 
     $currentReadings = $readings[$currentKey] ?? collect();
+    $currentGlucoseReadings = $glucoseReadings[$currentKey] ?? collect();
     $currentSummary  = $summaries[$currentKey] ?? null;
+    $previousVitalReadingsCount = collect($readings->all())
+        ->except([$currentKey])
+        ->sum(fn ($group) => $group->count());
 
     // Claves de turnos anteriores ordenadas cronológicamente (desc).
     $shiftOrder = ['morning' => 1, 'evening' => 2, 'night' => 3];
-    $historyKeys = $readings->keys()->merge($summaries->keys())->unique()
+    $historyKeys = $readings->keys()->merge($summaries->keys())->merge($glucoseReadings->keys())->unique()
         ->reject(fn ($k) => $k === $currentKey)
         ->sortByDesc(function ($k) use ($shiftOrder) {
             [$date, $shift] = explode('_', $k);
@@ -53,7 +57,7 @@
                     </div>
                 </div>
                 <div class="text-end">
-                    <span class="badge bg-primary fs-6 mb-2">
+                    <span class="badge {{ Shift::badgeClass($currentShift['shift']) }} fs-6 mb-2">
                         <i class="bi bi-clock me-1"></i>Turno actual: {{ Shift::label($currentShift['shift']) }}
                         ({{ Shift::timeRange($currentShift['shift']) }})
                     </span>
@@ -109,16 +113,24 @@
 
     {{-- ════════ SIGNOS VITALES — TURNO ACTUAL ════════ --}}
     <div class="card border-0 shadow-sm mb-3">
-        <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center">
+        <div class="card-header {{ Shift::backgroundClass($currentShift['shift']) }} d-flex flex-wrap justify-content-between align-items-center">
             <h6 class="fw-bold text-primary mb-0">
                 <i class="bi bi-activity me-1"></i>Signos Vitales — {{ Shift::label($currentShift['shift']) }},
                 {{ $currentShift['shift_date']->format('d/m/Y') }}
             </h6>
-            @if($canEdit)
-                <button type="button" class="btn btn-primary btn-sm" id="btnNuevaToma">
-                    <i class="bi bi-plus-circle me-1"></i>Registrar nueva toma
-                </button>
-            @endif
+            <div class="d-flex flex-wrap gap-2">
+                @if($previousVitalReadingsCount > 0)
+                    <a href="#historyAccordion" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-clock-history me-1"></i>
+                        Ver {{ $previousVitalReadingsCount }} {{ $previousVitalReadingsCount === 1 ? 'toma anterior' : 'tomas anteriores' }}
+                    </a>
+                @endif
+                @if($canEdit)
+                    <button type="button" class="btn btn-primary btn-sm" id="btnNuevaToma">
+                        <i class="bi bi-plus-circle me-1"></i>Registrar nueva toma
+                    </button>
+                @endif
+            </div>
         </div>
         <div class="card-body">
             @include('nursing-sheets.partials.vitals-table', [
@@ -127,6 +139,37 @@
             ])
         </div>
     </div>
+
+    {{-- ════════ GLUCEMIA CAPILAR — INDICACIÓN MÉDICA ACTIVA ════════ --}}
+    @if($activeGlucoseOrder)
+    <div class="card border-info shadow-sm mb-3">
+        <div class="card-header {{ Shift::backgroundClass($currentShift['shift']) }} d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div>
+                <h6 class="fw-bold text-primary mb-1">
+                    <i class="bi bi-droplet-half me-1"></i>Glucemia capilar — {{ Shift::label($currentShift['shift']) }},
+                    {{ $currentShift['shift_date']->format('d/m/Y') }}
+                </h6>
+                <div class="small text-muted">
+                    Indicación de Dr(a). {{ $activeGlucoseOrder->prescribedBy?->fullName() ?? '—' }}
+                    @if($activeGlucoseOrder->schedule_description)
+                        · {{ $activeGlucoseOrder->schedule_description }}
+                    @endif
+                </div>
+            </div>
+            @if($canEdit)
+                <button type="button" class="btn btn-primary btn-sm" id="btnNuevaGlucemia">
+                    <i class="bi bi-plus-circle me-1"></i>Registrar glucemia
+                </button>
+            @endif
+        </div>
+        <div class="card-body">
+            @include('nursing-sheets.partials.glucose-table', [
+                'rows'        => $currentGlucoseReadings,
+                'showActions' => $canEdit,
+            ])
+        </div>
+    </div>
+    @endif
 
     {{-- ════════ RESUMEN DEL TURNO ACTUAL ════════ --}}
     <div class="card border-0 shadow-sm mb-3">
@@ -178,6 +221,33 @@
             </a>
         </div>
         <div class="card-body">
+            @php
+                $scheduledMedicationOrders = $activeMedicationOrders
+                    ->filter(fn ($order) => $order->frequencyIntervalHours());
+            @endphp
+            @if($scheduledMedicationOrders->isNotEmpty())
+                <div class="row g-2 mb-3">
+                    @foreach($scheduledMedicationOrders as $order)
+                        @php
+                            $scheduleTimes = $order->dailyScheduleTimes();
+                            $nextScheduledAt = $order->nextScheduledAdministrationAt();
+                        @endphp
+                        <div class="col-md-6">
+                            <div class="alert alert-primary py-2 px-3 mb-0 h-100 small">
+                                <div class="fw-semibold"><i class="bi bi-clock me-1"></i>{{ $order->medication_name }} · {{ $order->dose }}</div>
+                                @if($scheduleTimes)
+                                    <div><strong>Horario:</strong> {{ implode(' · ', $scheduleTimes) }}</div>
+                                    @if($nextScheduledAt)
+                                        <div><strong>Próxima aplicación:</strong> {{ $nextScheduledAt->format('d/m/Y H:i') }}</div>
+                                    @endif
+                                @else
+                                    <div class="text-muted">El horario se calculará después de la primera aplicación.</div>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
             @if($recentAdministrations->isEmpty())
                 <p class="text-muted fst-italic mb-0">Sin administraciones registradas aún.</p>
             @else
@@ -228,12 +298,13 @@
                 <div class="table-responsive">
                     <table class="table table-sm table-hover align-middle mb-0">
                         <thead class="table-light">
-                            <tr><th>Hora</th><th>Categoría</th><th>Descripción</th><th>Enfermera</th><th></th></tr>
+                            <tr><th>Hora</th><th>Turno</th><th>Categoría</th><th>Descripción</th><th>Enfermera</th><th></th></tr>
                         </thead>
                         <tbody>
                             @foreach($recentEntries as $entry)
-                            <tr>
+                            <tr class="{{ Shift::tableClass($entry->shift) }}">
                                 <td class="text-nowrap small">{{ $entry->recorded_at->format('d/m H:i') }}</td>
+                                <td><span class="badge {{ Shift::badgeClass($entry->shift) }}">{{ $entry->shiftLabel() }}</span></td>
                                 <td>
                                     <span class="badge {{ $entry->categoryBadgeClass() }}">
                                         <i class="bi {{ $entry->categoryIcon() }} me-1"></i>{{ $entry->categoryLabel() }}
@@ -282,14 +353,16 @@
                             [$dateStr, $shiftCode] = explode('_', $key);
                             $shiftDate    = \Carbon\Carbon::createFromFormat('Y-m-d', $dateStr);
                             $rows         = $readings[$key] ?? collect();
+                            $glucoseRows  = $glucoseReadings[$key] ?? collect();
                             $summary      = $summaries[$key] ?? null;
                             $editor       = $summary?->recordedBy?->fullName()
                                             ?? optional($rows->last())->recordedBy?->fullName();
                         @endphp
                         <div class="accordion-item">
                             <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" type="button"
-                                        data-bs-toggle="collapse" data-bs-target="#hist{{ $i }}">
+                                <button class="accordion-button {{ $i === 0 ? '' : 'collapsed' }} {{ Shift::backgroundClass($shiftCode) }}" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#hist{{ $i }}"
+                                        aria-expanded="{{ $i === 0 ? 'true' : 'false' }}">
                                     <span>
                                         <strong>{{ Shift::label($shiftCode) }}</strong> ·
                                         {{ $shiftDate->format('d/m/Y') }}
@@ -300,13 +373,21 @@
                                     </span>
                                 </button>
                             </h2>
-                            <div id="hist{{ $i }}" class="accordion-collapse collapse" data-bs-parent="#historyAccordion">
+                            <div id="hist{{ $i }}" class="accordion-collapse collapse {{ $i === 0 ? 'show' : '' }}" data-bs-parent="#historyAccordion">
                                 <div class="accordion-body">
                                     <div class="fw-semibold small text-muted mb-1">Signos vitales</div>
                                     @include('nursing-sheets.partials.vitals-table', [
                                         'rows'        => $rows,
                                         'showActions' => false,
                                     ])
+
+                                    @if($glucoseRows->isNotEmpty())
+                                        <div class="fw-semibold small text-muted mt-3 mb-1">Glucemia capilar</div>
+                                        @include('nursing-sheets.partials.glucose-table', [
+                                            'rows'        => $glucoseRows,
+                                            'showActions' => false,
+                                        ])
+                                    @endif
 
                                     <div class="fw-semibold small text-muted mt-3 mb-1">Resumen del turno</div>
                                     @if($summary)
@@ -332,6 +413,7 @@
         <div class="modal-content shadow">
             <form method="POST" action="{{ route('vitalSigns.store', $stay) }}">
                 @csrf
+                <input type="hidden" name="form_type" value="vitals">
                 <div class="modal-header border-0">
                     <h5 class="modal-title fw-bold"><i class="bi bi-activity me-1"></i>Registrar nueva toma</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -348,6 +430,91 @@
         </div>
     </div>
 </div>
+
+@if($activeGlucoseOrder)
+{{-- Modal: registrar glucemia capilar --}}
+<div class="modal fade" id="nuevaGlucemiaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content shadow">
+            <form method="POST" action="{{ route('glucoseReadings.store', $stay) }}">
+                @csrf
+                <input type="hidden" name="form_type" value="glucose">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-droplet-half me-1"></i>Registrar glucemia capilar</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="glucose_recorded_at" class="form-label fw-semibold small">
+                            Hora de la lectura <span class="text-danger">*</span>
+                        </label>
+                        <input type="datetime-local" id="glucose_recorded_at" name="recorded_at"
+                               class="form-control @error('recorded_at') is-invalid @enderror"
+                               value="{{ old('form_type') === 'glucose' ? old('recorded_at', now()->format('Y-m-d\TH:i')) : now()->format('Y-m-d\TH:i') }}"
+                               max="{{ now()->format('Y-m-d\TH:i') }}" required>
+                        @error('recorded_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="mb-3">
+                        <label for="value_mg_dl" class="form-label fw-semibold small">
+                            Glucemia capilar (mg/dL) <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" id="value_mg_dl" name="value_mg_dl" min="20" max="800"
+                               class="form-control @error('value_mg_dl') is-invalid @enderror"
+                               value="{{ old('value_mg_dl') }}" placeholder="Ej. 95" required>
+                        @error('value_mg_dl')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div>
+                        <label for="glucose_notes" class="form-label fw-semibold small">Notas</label>
+                        <input type="text" id="glucose_notes" name="notes" maxlength="255"
+                               class="form-control @error('notes') is-invalid @enderror"
+                               value="{{ old('form_type') === 'glucose' ? old('notes') : '' }}">
+                        @error('notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Registrar glucemia</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Modal: editar glucemia capilar --}}
+<div class="modal fade" id="editarGlucemiaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content shadow">
+            <form method="POST" id="editarGlucemiaForm">
+                @csrf
+                @method('PUT')
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-pencil me-1"></i>Editar glucemia capilar</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_glucose_value" class="form-label fw-semibold small">Glucemia capilar (mg/dL)</label>
+                        <input type="number" id="edit_glucose_value" name="value_mg_dl" min="20" max="800" class="form-control" required>
+                    </div>
+                    <div>
+                        <label for="edit_glucose_notes" class="form-label fw-semibold small">Notas</label>
+                        <input type="text" id="edit_glucose_notes" name="notes" maxlength="255" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<form method="POST" id="deleteGlucoseForm" class="d-none">
+    @csrf
+    @method('DELETE')
+</form>
+@endif
 
 {{-- Modal: editar toma --}}
 <div class="modal fade" id="editarTomaModal" tabindex="-1" aria-hidden="true">
@@ -397,9 +564,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnNueva = document.getElementById('btnNuevaToma');
     if (btnNueva) btnNueva.addEventListener('click', () => openModal('nuevaTomaModal'));
 
+    const btnNuevaGlucemia = document.getElementById('btnNuevaGlucemia');
+    if (btnNuevaGlucemia) btnNuevaGlucemia.addEventListener('click', () => openModal('nuevaGlucemiaModal'));
+
     // Reabrir el modal de captura si hubo errores de validación.
     @if($errors->any())
-        openModal('nuevaTomaModal');
+        openModal(@json(old('form_type') === 'glucose' ? 'nuevaGlucemiaModal' : 'nuevaTomaModal'));
     @endif
 
     // Editar toma: precargar datos y apuntar el form a la ruta correcta.
@@ -424,6 +594,26 @@ document.addEventListener('DOMContentLoaded', function () {
             if (confirm('¿Eliminar esta toma de signos vitales?')) {
                 delForm.action = btn.dataset.action;
                 delForm.submit();
+            }
+        });
+    });
+
+    const editGlucoseForm = document.getElementById('editarGlucemiaForm');
+    document.querySelectorAll('.btn-edit-glucose').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            editGlucoseForm.action = '{{ url('glucose-readings') }}/' + btn.dataset.id;
+            document.getElementById('edit_glucose_value').value = btn.dataset.value_mg_dl || '';
+            document.getElementById('edit_glucose_notes').value = btn.dataset.notes || '';
+            openModal('editarGlucemiaModal');
+        });
+    });
+
+    const deleteGlucoseForm = document.getElementById('deleteGlucoseForm');
+    document.querySelectorAll('.btn-delete-glucose').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            if (confirm('¿Eliminar esta lectura de glucemia?')) {
+                deleteGlucoseForm.action = btn.dataset.action;
+                deleteGlucoseForm.submit();
             }
         });
     });

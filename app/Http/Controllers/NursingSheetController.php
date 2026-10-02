@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Stay;
+use App\Models\GlucoseReading;
 use App\Models\ShiftSummary;
+use App\Models\Stay;
 use App\Models\VitalSignReading;
 use App\Support\Shift;
 use Illuminate\View\View;
@@ -25,23 +26,34 @@ class NursingSheetController extends Controller
             }
         }
 
-        $stay->load(['patient', 'room', 'glucoseMonitoringOrders', 'glucoseReadings', 'fluidBalanceOrders']);
+        $stay->load([
+            'patient',
+            'room',
+            'glucoseMonitoringOrders.prescribedBy',
+            'fluidBalanceOrders',
+        ]);
 
         // Lecturas de signos vitales agrupadas por turno (clave: fecha_turno).
         $readings = VitalSignReading::forStay($stay->id)
             ->with('recordedBy')
             ->get()
-            ->groupBy(fn ($r) => $r->shift_date->format('Y-m-d') . '_' . $r->shift);
+            ->groupBy(fn ($r) => $r->shift_date->format('Y-m-d').'_'.$r->shift);
 
         // Resúmenes de turno indexados por la misma clave.
         $summaries = ShiftSummary::where('stay_id', $stay->id)
             ->with('recordedBy')
             ->orderByDesc('shift_date')
             ->get()
-            ->keyBy(fn ($s) => $s->shift_date->format('Y-m-d') . '_' . $s->shift);
+            ->keyBy(fn ($s) => $s->shift_date->format('Y-m-d').'_'.$s->shift);
+
+        // La glucemia tiene un registro independiente de los signos vitales.
+        $glucoseReadings = GlucoseReading::forStay($stay->id)
+            ->with(['recordedBy', 'order.prescribedBy'])
+            ->get()
+            ->groupBy(fn ($reading) => $reading->shift_date->format('Y-m-d').'_'.$reading->shift);
 
         $currentShift = Shift::currentShift();
-        $currentKey   = $currentShift['shift_date']->format('Y-m-d') . '_' . $currentShift['shift'];
+        $currentKey = $currentShift['shift_date']->format('Y-m-d').'_'.$currentShift['shift'];
 
         // Administraciones de medicamentos recientes (vista de enlace).
         $recentAdministrations = $stay->medicationAdministrations()
@@ -50,18 +62,28 @@ class NursingSheetController extends Controller
             ->limit(10)
             ->get();
         $administrationsTotal = $stay->medicationAdministrations()->count();
+        $activeMedicationOrders = $stay->medicationOrders()
+            ->whereNull('suspended_at')
+            ->with('administrations')
+            ->get()
+            ->filter->isActive()
+            ->values();
 
         $activeBalanceOrder = $stay->activeFluidBalanceOrder();
+        $activeGlucoseOrder = $stay->activeGlucoseMonitoringOrder();
 
         return view('nursing-sheets.index', compact(
             'stay',
             'readings',
             'summaries',
+            'glucoseReadings',
             'currentShift',
             'currentKey',
             'recentAdministrations',
             'administrationsTotal',
+            'activeMedicationOrders',
             'activeBalanceOrder',
+            'activeGlucoseOrder',
         ));
     }
 }

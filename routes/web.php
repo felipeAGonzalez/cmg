@@ -75,7 +75,6 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
             Route::get('/rooms/{room}/patient', [StayController::class, 'show'])->name('stays.show');
             Route::post('/stays/{stay}/discharge', [StayController::class, 'discharge'])->name('stays.discharge');
 
-
             Route::get('/patients/{patient}/edit', [PatientController::class, 'edit'])->name('patients.edit');
             Route::put('/patients/{patient}', [PatientController::class, 'update'])->name('patients.update');
 
@@ -97,6 +96,9 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
             Route::post('/stays/{stay}/vital-signs', [VitalSignController::class, 'store'])->name('vitalSigns.store');
             Route::put('/vital-signs/{vitalSignReading}', [VitalSignController::class, 'update'])->name('vitalSigns.update');
             Route::delete('/vital-signs/{vitalSignReading}', [VitalSignController::class, 'destroy'])->name('vitalSigns.destroy');
+            Route::post('/stays/{stay}/glucose-readings', [GlucoseReadingController::class, 'store'])->name('glucoseReadings.store');
+            Route::put('/glucose-readings/{glucoseReading}', [GlucoseReadingController::class, 'update'])->name('glucoseReadings.update');
+            Route::delete('/glucose-readings/{glucoseReading}', [GlucoseReadingController::class, 'destroy'])->name('glucoseReadings.destroy');
 
             Route::get('/stays/{stay}/shift-summary', [ShiftSummaryController::class, 'edit'])->name('shiftSummary.edit');
             Route::put('/stays/{stay}/shift-summary', [ShiftSummaryController::class, 'update'])->name('shiftSummary.update');

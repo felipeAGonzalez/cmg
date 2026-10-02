@@ -42,6 +42,9 @@
                                 data-dose="{{ $order->dose }}"
                                 data-route="{{ $order->routeLabel() }}"
                                 data-frequency="{{ $order->frequencyLabel() }}"
+                                data-schedule="{{ implode(' · ', $order->dailyScheduleTimes()) }}"
+                                data-next="{{ $order->nextScheduledAdministrationAt()?->format('d/m/Y H:i') }}"
+                                data-schedulable="{{ $order->frequencyIntervalHours() ? '1' : '0' }}"
                                 {{ (string) old('medication_order_id', $selectedOrderId) === (string) $order->id ? 'selected' : '' }}>
                             {{ $order->medication_name }} · {{ $order->dose }}
                         </option>
@@ -55,6 +58,11 @@
                 <span class="text-muted">Dosis prescrita:</span> <strong id="detailDose">—</strong> ·
                 <span class="text-muted">Vía:</span> <span id="detailRoute">—</span> ·
                 <span class="text-muted">Frecuencia:</span> <span id="detailFrequency">—</span>
+            </div>
+            <div id="scheduleDetail" class="alert alert-primary py-2 px-3 mt-3 mb-0 small" style="display:none;">
+                <div class="fw-semibold"><i class="bi bi-clock me-1"></i>Horario de aplicación</div>
+                <div id="detailSchedule"></div>
+                <div id="detailNext" class="mt-1"></div>
             </div>
         </div>
 
@@ -88,14 +96,30 @@
         const select = document.getElementById('medication_order_id');
         const detail = document.getElementById('orderDetail');
         const dose   = document.getElementById('actual_dose');
+        const scheduleDetail = document.getElementById('scheduleDetail');
 
         const apply = (prefillDose) => {
             const opt = select.options[select.selectedIndex];
-            if (!opt || !opt.value) { detail.style.display = 'none'; return; }
+            if (!opt || !opt.value) {
+                detail.style.display = 'none';
+                scheduleDetail.style.display = 'none';
+                return;
+            }
             document.getElementById('detailDose').textContent = opt.dataset.dose || '—';
             document.getElementById('detailRoute').textContent = opt.dataset.route || '—';
             document.getElementById('detailFrequency').textContent = opt.dataset.frequency || '—';
             detail.style.display = 'block';
+            if (opt.dataset.schedulable === '1') {
+                document.getElementById('detailSchedule').textContent = opt.dataset.schedule
+                    ? opt.dataset.schedule
+                    : 'Se calculará al registrar la primera aplicación.';
+                document.getElementById('detailNext').textContent = opt.dataset.next
+                    ? 'Próxima aplicación programada: ' + opt.dataset.next
+                    : '';
+                scheduleDetail.style.display = 'block';
+            } else {
+                scheduleDetail.style.display = 'none';
+            }
             if (prefillDose && !dose.value) dose.value = opt.dataset.dose || '';
         };
 

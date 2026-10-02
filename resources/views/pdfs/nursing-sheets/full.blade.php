@@ -68,6 +68,25 @@
         table.grid td.num { text-align: right; }
         table.grid td.center, table.grid th.center { text-align: center; }
 
+        /* Código de color por turno: mañana azul, tarde verde, noche rojo. */
+        table.grid tr.shift-morning td { background: #E3F2FD; }
+        table.grid tr.shift-evening td { background: #E8F5E9; }
+        table.grid tr.shift-night td { background: #FFEBEE; }
+        .shift-label {
+            display: inline-block;
+            padding: 1px 4px;
+            border-radius: 2px;
+            color: #fff;
+            font-size: 7px;
+            font-weight: bold;
+        }
+        .shift-label.shift-morning { background: #1565C0; }
+        .shift-label.shift-evening { background: #2E7D32; }
+        .shift-label.shift-night { background: #C62828; }
+        .shift-heading.shift-morning { background: #E3F2FD; border-left: 4px solid #1565C0; }
+        .shift-heading.shift-evening { background: #E8F5E9; border-left: 4px solid #2E7D32; }
+        .shift-heading.shift-night { background: #FFEBEE; border-left: 4px solid #C62828; }
+
         /* Tabla densa del balance de líquidos (16 columnas en carta vertical) */
         table.fb-table { table-layout: fixed; }
         table.fb-table th,

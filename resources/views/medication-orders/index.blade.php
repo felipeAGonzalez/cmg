@@ -99,6 +99,24 @@
                                 <span class="badge {{ $order->statusBadgeClass() }}">{{ $order->statusLabel() }}</span>
                             </div>
                             <div class="small mb-1"><i class="bi bi-signpost me-1"></i>{{ $order->routeLabel() }} · {{ $order->frequencyLabel() }}</div>
+                            @php
+                                $scheduleTimes = $order->dailyScheduleTimes();
+                                $nextScheduledAt = $order->nextScheduledAdministrationAt();
+                            @endphp
+                            @if($order->frequencyIntervalHours())
+                                <div class="alert alert-primary py-2 px-3 my-2 small">
+                                    <div class="fw-semibold"><i class="bi bi-clock me-1"></i>Horario de aplicación</div>
+                                    @if($scheduleTimes)
+                                        <div>{{ implode(' · ', $scheduleTimes) }}</div>
+                                        @if($nextScheduledAt)
+                                            <div class="mt-1"><strong>Próxima:</strong> {{ $nextScheduledAt->format('d/m/Y H:i') }}</div>
+                                        @endif
+                                        <div class="text-muted">Calculado desde la primera aplicación.</div>
+                                    @else
+                                        <div class="text-muted">Se calculará al registrar la primera aplicación.</div>
+                                    @endif
+                                </div>
+                            @endif
                             <div class="small text-muted mb-1">
                                 <i class="bi bi-calendar-event me-1"></i>Inicio: {{ $order->start_date->format('d/m/Y') }}
                                 @if($order->progressLabel())

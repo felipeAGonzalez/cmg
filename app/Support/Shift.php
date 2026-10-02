@@ -7,8 +7,10 @@ use Carbon\Carbon;
 class Shift
 {
     public const MORNING = 'morning';   // 07:00 - 13:59
+
     public const EVENING = 'evening';   // 14:00 - 20:59
-    public const NIGHT   = 'night';     // 21:00 - 06:59 (cruza medianoche)
+
+    public const NIGHT = 'night';     // 21:00 - 06:59 (cruza medianoche)
 
     /** @return array<string, string> */
     public static function labels(): array
@@ -16,7 +18,7 @@ class Shift
         return [
             self::MORNING => 'Matutino',
             self::EVENING => 'Vespertino',
-            self::NIGHT   => 'Nocturno',
+            self::NIGHT => 'Nocturno',
         ];
     }
 
@@ -28,43 +30,43 @@ class Shift
      */
     public static function forDateTime(Carbon $dateTime): array
     {
-        $dt   = $dateTime->copy()->setTimezone(config('app.timezone'));
+        $dt = $dateTime->copy()->setTimezone(config('app.timezone'));
         $hour = $dt->hour;
 
         if ($hour >= 7 && $hour < 14) {
             return [
-                'shift'      => self::MORNING,
+                'shift' => self::MORNING,
                 'shift_date' => $dt->copy()->startOfDay(),
-                'starts_at'  => $dt->copy()->setTime(7, 0),
-                'ends_at'    => $dt->copy()->setTime(13, 59, 59),
+                'starts_at' => $dt->copy()->setTime(7, 0),
+                'ends_at' => $dt->copy()->setTime(13, 59, 59),
             ];
         }
 
         if ($hour >= 14 && $hour < 21) {
             return [
-                'shift'      => self::EVENING,
+                'shift' => self::EVENING,
                 'shift_date' => $dt->copy()->startOfDay(),
-                'starts_at'  => $dt->copy()->setTime(14, 0),
-                'ends_at'    => $dt->copy()->setTime(20, 59, 59),
+                'starts_at' => $dt->copy()->setTime(14, 0),
+                'ends_at' => $dt->copy()->setTime(20, 59, 59),
             ];
         }
 
         // Turno nocturno que inicia hoy: 21:00 - 06:59 del día siguiente.
         if ($hour >= 21) {
             return [
-                'shift'      => self::NIGHT,
+                'shift' => self::NIGHT,
                 'shift_date' => $dt->copy()->startOfDay(),
-                'starts_at'  => $dt->copy()->setTime(21, 0),
-                'ends_at'    => $dt->copy()->addDay()->setTime(6, 59, 59),
+                'starts_at' => $dt->copy()->setTime(21, 0),
+                'ends_at' => $dt->copy()->addDay()->setTime(6, 59, 59),
             ];
         }
 
         // hour 0-6: el turno nocturno empezó AYER a las 21:00.
         return [
-            'shift'      => self::NIGHT,
+            'shift' => self::NIGHT,
             'shift_date' => $dt->copy()->subDay()->startOfDay(),
-            'starts_at'  => $dt->copy()->subDay()->setTime(21, 0),
-            'ends_at'    => $dt->copy()->setTime(6, 59, 59),
+            'starts_at' => $dt->copy()->subDay()->setTime(21, 0),
+            'ends_at' => $dt->copy()->setTime(6, 59, 59),
         ];
     }
 
@@ -90,6 +92,50 @@ class Shift
         return self::labels()[$shiftCode] ?? $shiftCode;
     }
 
+    /** Clase Bootstrap para identificar visualmente el turno. */
+    public static function badgeClass(string $shiftCode): string
+    {
+        return match ($shiftCode) {
+            self::MORNING => 'bg-primary',
+            self::EVENING => 'bg-success',
+            self::NIGHT => 'bg-danger',
+            default => 'bg-secondary',
+        };
+    }
+
+    /** Fondo tenue para las filas de cada turno en la interfaz web. */
+    public static function tableClass(string $shiftCode): string
+    {
+        return match ($shiftCode) {
+            self::MORNING => 'table-primary',
+            self::EVENING => 'table-success',
+            self::NIGHT => 'table-danger',
+            default => '',
+        };
+    }
+
+    /** Fondo tenue para encabezados y contenedores de la interfaz web. */
+    public static function backgroundClass(string $shiftCode): string
+    {
+        return match ($shiftCode) {
+            self::MORNING => 'bg-primary-subtle',
+            self::EVENING => 'bg-success-subtle',
+            self::NIGHT => 'bg-danger-subtle',
+            default => 'bg-light',
+        };
+    }
+
+    /** Clase de color compatible con las plantillas PDF. */
+    public static function pdfClass(string $shiftCode): string
+    {
+        return match ($shiftCode) {
+            self::MORNING => 'shift-morning',
+            self::EVENING => 'shift-evening',
+            self::NIGHT => 'shift-night',
+            default => '',
+        };
+    }
+
     /**
      * Rango horario legible de un turno, p.ej. "14:00 - 21:00".
      */
@@ -98,8 +144,8 @@ class Shift
         return match ($shiftCode) {
             self::MORNING => '07:00 - 14:00',
             self::EVENING => '14:00 - 21:00',
-            self::NIGHT   => '21:00 - 07:00',
-            default       => '',
+            self::NIGHT => '21:00 - 07:00',
+            default => '',
         };
     }
 }

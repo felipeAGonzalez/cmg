@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Stay;
+use App\Services\VitalSignsChartGenerator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Response;
@@ -43,16 +44,17 @@ class NursingSheetPdfController extends Controller
                 $q->with(['prescribedBy', 'createdBy', 'suspendedBy', 'days.entries.recordedBy'])
                     ->orderBy('start_date');
             },
-            'glucoseMonitoringOrders',
-            'glucoseReadings',
+            'glucoseMonitoringOrders.prescribedBy',
+            'glucoseReadings.recordedBy',
         ]);
 
         // Signos vitales: lista cronológica única (sin agrupar por día calendario).
         $vitalSignReadings = $stay->vitalSignReadings->sortBy('recorded_at')->values();
+        $glucoseReadings = $stay->glucoseReadings->sortBy('recorded_at')->values();
 
         // Resúmenes de turno: solo los que existen, ordenados por fecha y turno.
         $shiftSummaries = $stay->shiftSummaries
-            ->sortBy(fn ($s) => $s->shift_date->format('Y-m-d') . '_' . $s->shift)
+            ->sortBy(fn ($s) => $s->shift_date->format('Y-m-d').'_'.$s->shift)
             ->values();
 
         // Notas de enfermería: agrupadas por día calendario, solo días con notas.
@@ -70,36 +72,37 @@ class NursingSheetPdfController extends Controller
         $hasFluidBalance = $stay->fluidBalanceOrders->isNotEmpty();
 
         // Gráfica de signos vitales como imagen PNG base64 (null si no hay datos o no hay GD).
-        $chartImage = \App\Services\VitalSignsChartGenerator::generate(
+        $chartImage = VitalSignsChartGenerator::generate(
             $vitalSignReadings,
             $admission,
             $endDate
         );
 
         $pdf = Pdf::loadView('pdfs.nursing-sheets.full', [
-            'stay'                => $stay,
-            'patient'             => $stay->patient,
-            'vitalSignReadings'   => $vitalSignReadings,
-            'shiftSummaries'      => $shiftSummaries,
+            'stay' => $stay,
+            'patient' => $stay->patient,
+            'vitalSignReadings' => $vitalSignReadings,
+            'glucoseReadings' => $glucoseReadings,
+            'shiftSummaries' => $shiftSummaries,
             'nursingEntriesByDay' => $nursingEntriesByDay,
-            'admissionDate'       => $admission,
-            'endDate'             => $endDate,
-            'hasFluidBalance'     => $hasFluidBalance,
-            'chartImage'          => $chartImage,
-            'generatedAt'         => now(),
-            'generatedBy'         => $user,
+            'admissionDate' => $admission,
+            'endDate' => $endDate,
+            'hasFluidBalance' => $hasFluidBalance,
+            'chartImage' => $chartImage,
+            'generatedAt' => now(),
+            'generatedBy' => $user,
         ])
             ->setPaper('letter', 'portrait')
             ->setOptions([
-                'dpi'                  => 96,
-                'defaultFont'          => 'sans-serif',
-                'isRemoteEnabled'      => false,
+                'dpi' => 96,
+                'defaultFont' => 'sans-serif',
+                'isRemoteEnabled' => false,
                 'isHtml5ParserEnabled' => true,
             ]);
 
         $filename = 'hojas-enfermeria-'
-            . str_replace(' ', '-', strtolower($stay->patient->fullName()))
-            . '-' . $stay->id . '.pdf';
+            .str_replace(' ', '-', strtolower($stay->patient->fullName()))
+            .'-'.$stay->id.'.pdf';
 
         return $pdf->stream($filename);
     }

@@ -1,9 +1,5 @@
 @php
     use App\Support\Shift;
-
-    $hasGlucoseOrders = $stay->glucoseMonitoringOrders->isNotEmpty();
-    $glucoseReadingsByTimestamp = $stay->glucoseReadings
-        ->keyBy(fn ($g) => $g->recorded_at->format('Y-m-d H:i:s'));
 @endphp
 
 <div class="chapter-title">Hoja 1 — Registros clínicos y signos vitales</div>
@@ -21,26 +17,25 @@
                 <tr>
                     <th class="center" style="width:62px;">Fecha</th>
                     <th class="center" style="width:42px;">Hora</th>
+                    <th class="center" style="width:54px;">Turno</th>
                     <th class="center" style="width:42px;">F.C.</th>
                     <th class="center" style="width:58px;">T.A.</th>
                     <th class="center" style="width:42px;">F.R.</th>
                     <th class="center" style="width:48px;">Temp.</th>
-                    @if($hasGlucoseOrders)<th class="center" style="width:42px;">Gluc.</th>@endif
                     <th>Notas</th>
                     <th style="width:110px;">Enfermera</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($vitalSignReadings as $r)
-                    @php $glucose = $glucoseReadingsByTimestamp[$r->recorded_at->format('Y-m-d H:i:s')] ?? null; @endphp
-                    <tr>
+                    <tr class="{{ Shift::pdfClass($r->shift) }}">
                         <td class="center">{{ $r->recorded_at->format('d/m/Y') }}</td>
                         <td class="center">{{ $r->recorded_at->format('H:i') }}</td>
+                        <td class="center"><span class="shift-label {{ Shift::pdfClass($r->shift) }}">{{ Shift::label($r->shift) }}</span></td>
                         <td class="center">{{ $r->heart_rate ?? '—' }}</td>
                         <td class="center">{{ $r->bloodPressureFormatted() ?? '—' }}</td>
                         <td class="center">{{ $r->respiratory_rate ?? '—' }}</td>
                         <td class="center">{{ $r->temperature ? rtrim(rtrim(number_format($r->temperature, 1), '0'), '.') . '°' : '—' }}</td>
-                        @if($hasGlucoseOrders)<td class="center">{{ $glucose?->value_mg_dl ?? '—' }}</td>@endif
                         <td>{{ $r->notes ?: '—' }}</td>
                         <td>{{ $r->recordedBy?->fullName() ?? '—' }}@if($r->recordedBy?->professional_license) <span style="font-size:7px;">(Céd. {{ $r->recordedBy->professional_license }})</span>@endif</td>
                     </tr>
@@ -50,6 +45,41 @@
     @endif
 </div>
 
+{{-- La glucemia se documenta como un registro independiente cuando fue indicada. --}}
+@if($stay->glucoseMonitoringOrders->isNotEmpty() || $glucoseReadings->isNotEmpty())
+<div style="margin-bottom:16px;">
+    <div class="subsection-title">Lecturas de glucemia capilar ({{ $glucoseReadings->count() }})</div>
+    @if($glucoseReadings->isEmpty())
+        <p class="empty-note">Sin lecturas de glucemia registradas durante la estancia.</p>
+    @else
+        <table class="grid">
+            <thead>
+                <tr>
+                    <th class="center" style="width:62px;">Fecha</th>
+                    <th class="center" style="width:42px;">Hora</th>
+                    <th class="center" style="width:54px;">Turno</th>
+                    <th class="center" style="width:75px;">Glucemia</th>
+                    <th>Notas</th>
+                    <th style="width:110px;">Enfermera</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($glucoseReadings as $reading)
+                    <tr class="{{ Shift::pdfClass($reading->shift) }}">
+                        <td class="center">{{ $reading->recorded_at->format('d/m/Y') }}</td>
+                        <td class="center">{{ $reading->recorded_at->format('H:i') }}</td>
+                        <td class="center"><span class="shift-label {{ Shift::pdfClass($reading->shift) }}">{{ Shift::label($reading->shift) }}</span></td>
+                        <td class="center">{{ $reading->value_mg_dl }} mg/dL</td>
+                        <td>{{ $reading->notes ?: '—' }}</td>
+                        <td>{{ $reading->recordedBy?->fullName() ?? '—' }}@if($reading->recordedBy?->professional_license) <span style="font-size:7px;">(Céd. {{ $reading->recordedBy->professional_license }})</span>@endif</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
+</div>
+@endif
+
 {{-- Resúmenes de turno: solo los que tienen datos --}}
 <div style="margin-bottom:16px;">
     <div class="subsection-title">Resúmenes de turno ({{ $shiftSummaries->count() }})</div>
@@ -58,8 +88,9 @@
     @else
         @foreach($shiftSummaries as $summary)
             <div style="page-break-inside:avoid; margin-bottom:10px; border:1px solid #ccc; padding:6px;">
-                <div style="background:#E3F2FD; padding:3px 6px; font-weight:bold; font-size:10px; margin:-6px -6px 6px -6px;">
-                    {{ Shift::label($summary->shift) }} — {{ $summary->shift_date->format('d/m/Y') }}
+                <div class="shift-heading {{ Shift::pdfClass($summary->shift) }}" style="padding:3px 6px; font-weight:bold; font-size:10px; margin:-6px -6px 6px -6px;">
+                    <span class="shift-label {{ Shift::pdfClass($summary->shift) }}">{{ Shift::label($summary->shift) }}</span>
+                    — {{ $summary->shift_date->format('d/m/Y') }}
                 </div>
                 <table style="width:100%; border-collapse:collapse; font-size:9px;">
                     <tr>

@@ -10,6 +10,7 @@ use App\Models\Stay;
 use App\Support\Shift;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Collection;
 
 class MedicationAdministrationController extends Controller
 {
@@ -32,7 +33,9 @@ class MedicationAdministrationController extends Controller
             ->orderByDesc('administered_at')
             ->paginate(50);
 
-        return view('medication-administrations.index', compact('stay', 'administrations'));
+        $activeOrders = $this->activeOrdersFor($stay);
+
+        return view('medication-administrations.index', compact('stay', 'administrations', 'activeOrders'));
     }
 
     public function create(Stay $stay): View|RedirectResponse
@@ -45,9 +48,9 @@ class MedicationAdministrationController extends Controller
         }
 
         return view('medication-administrations.create', [
-            'stay'            => $stay,
+            'stay' => $stay,
             'availableOrders' => $availableOrders,
-            'statuses'        => config('administration_statuses'),
+            'statuses' => config('administration_statuses'),
             'selectedOrderId' => (int) request('medication_order_id'),
         ]);
     }
@@ -70,9 +73,9 @@ class MedicationAdministrationController extends Controller
 
         MedicationAdministration::create([
             ...$data,
-            'stay_id'        => $stay->id,
-            'shift'          => $shiftInfo['shift'],
-            'shift_date'     => $shiftInfo['shift_date']->toDateString(),
+            'stay_id' => $stay->id,
+            'shift' => $shiftInfo['shift'],
+            'shift_date' => $shiftInfo['shift_date']->toDateString(),
             'recorded_by_id' => auth()->id(),
         ]);
 
@@ -90,8 +93,8 @@ class MedicationAdministrationController extends Controller
 
         return view('medication-administrations.edit', [
             'administration' => $medicationAdministration,
-            'stay'           => $medicationAdministration->stay,
-            'statuses'       => config('administration_statuses'),
+            'stay' => $medicationAdministration->stay,
+            'statuses' => config('administration_statuses'),
         ]);
     }
 
@@ -125,12 +128,13 @@ class MedicationAdministrationController extends Controller
     /**
      * Prescripciones actualmente activas de la estancia (estado calculado).
      *
-     * @return \Illuminate\Support\Collection<int, MedicationOrder>
+     * @return Collection<int, MedicationOrder>
      */
-    protected function activeOrdersFor(Stay $stay): \Illuminate\Support\Collection
+    protected function activeOrdersFor(Stay $stay): Collection
     {
         return $stay->medicationOrders()
             ->whereNull('suspended_at')
+            ->with(['administrations', 'prescribedBy'])
             ->orderBy('medication_name')
             ->get()
             ->filter->isActive()

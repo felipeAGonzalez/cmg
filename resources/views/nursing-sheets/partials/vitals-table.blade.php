@@ -3,13 +3,9 @@
     Variables esperadas:
       $rows        : Collection<VitalSignReading>
       $showActions : bool  (mostrar columna Acciones con Editar/Eliminar)
-    Usa $stay (del scope padre) para la columna condicional de glucemia.
 --}}
 @php
-    $hasGlucoseOrders = $stay->glucoseMonitoringOrders->isNotEmpty();
-    $glucoseReadingsByTimestamp = $stay->glucoseReadings
-        ->keyBy(fn ($g) => $g->recorded_at->format('Y-m-d H:i:s'));
-    $baseCols = $hasGlucoseOrders ? 8 : 7;
+    use App\Support\Shift;
 @endphp
 <div class="table-responsive">
     <table class="table table-sm align-middle mb-0">
@@ -20,7 +16,6 @@
                 <th>T.A.</th>
                 <th>F.R.</th>
                 <th>Temp</th>
-                @if($hasGlucoseOrders)<th>Glucemia (mg/dL)</th>@endif
                 <th>Notas</th>
                 <th>Enfermera</th>
                 @if($showActions)<th class="text-end">Acciones</th>@endif
@@ -28,24 +23,17 @@
         </thead>
         <tbody>
             @forelse($rows as $r)
-            @php $glucose = $glucoseReadingsByTimestamp[$r->recorded_at->format('Y-m-d H:i:s')] ?? null; @endphp
-            <tr>
+            <tr class="{{ Shift::tableClass($r->shift) }}">
                 <td class="text-nowrap">{{ $r->recorded_at->format('H:i') }}</td>
                 <td>{{ $r->heart_rate ?? '—' }}</td>
                 <td>{{ $r->bloodPressureFormatted() ?? '—' }}</td>
                 <td>{{ $r->respiratory_rate ?? '—' }}</td>
                 <td>{{ $r->temperature !== null ? rtrim(rtrim(number_format($r->temperature, 2), '0'), '.') . '°' : '—' }}</td>
-                @if($hasGlucoseOrders)
-                <td>
-                    @if($glucose)
-                        <span class="badge {{ $glucose->rangeBadgeClass() }}">{{ $glucose->value_mg_dl }}</span>
-                    @else
-                        —
-                    @endif
-                </td>
-                @endif
                 <td>{{ $r->notes ?? '—' }}</td>
-                <td class="text-muted small">{{ $r->recordedBy?->fullName() ?? '—' }}</td>
+                <td class="small">
+                    <span class="badge {{ Shift::badgeClass($r->shift) }} mb-1">{{ Shift::label($r->shift) }}</span><br>
+                    {{ $r->recordedBy?->fullName() ?? '—' }}
+                </td>
                 @if($showActions)
                 <td class="text-end text-nowrap">
                     @if($r->isEditable())
@@ -73,7 +61,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="{{ $showActions ? $baseCols + 1 : $baseCols }}" class="text-center text-muted fst-italic py-3">
+                <td colspan="{{ $showActions ? 8 : 7 }}" class="text-center text-muted fst-italic py-3">
                     Sin tomas registradas.
                 </td>
             </tr>
