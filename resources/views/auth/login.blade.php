@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar sesión</title>
+    <title>Sistema de Hospitalización | CMG</title>
 
     {{-- Bootstrap 5 CDN. PERSONALIZACIÓN: reemplaza por versión local si lo prefieres. --}}
     <link
@@ -19,6 +19,13 @@
 
         /* PERSONALIZACIÓN: ajusta el ancho máximo de la tarjeta. */
         .login-card { max-width: 420px; width: 100%; }
+
+        .login-logo {
+            display: block;
+            width: min(210px, 75%);
+            height: auto;
+            margin: 0 auto 1.25rem;
+        }
     </style>
 </head>
 <body class="d-flex align-items-center justify-content-center min-vh-100">
@@ -27,13 +34,15 @@
     <div class="card shadow-sm border-0">
         <div class="card-body p-4 p-md-5">
 
-            {{-- PERSONALIZACIÓN: descomenta y pon la ruta a tu logo corporativo. --}}
-            {{-- <div class="text-center mb-4">
-                <img src="{{ asset('images/logo.png') }}" alt="Logo" style="max-height: 60px;">
-            </div> --}}
-
-            {{-- PERSONALIZACIÓN: cambia el nombre de la aplicación. --}}
-            <h1 class="h4 text-center mb-4 text-dark fw-semibold">Iniciar sesión</h1>
+            <header class="text-center mb-4">
+                <img
+                    src="{{ asset('logos/CMG.png') }}"
+                    alt="Centro Médico Guadalupano"
+                    class="login-logo"
+                >
+                <h1 class="h4 mb-2 text-dark fw-semibold">Sistema de Hospitalización</h1>
+                <p class="mb-0 text-muted">Iniciar sesión</p>
+            </header>
 
             @if (session('status'))
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
