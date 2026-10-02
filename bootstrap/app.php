@@ -1,14 +1,19 @@
 <?php
 
+use App\Http\Middleware\EnsurePasswordIsChanged;
+use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\EnsureWarehouseIntegrationToken;
+use App\Http\Middleware\PreventBackHistory;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
-use Illuminate\Http\Middleware\TrustProxies;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
@@ -23,14 +28,15 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         $middleware->alias([
-            'prevent.back'     => \App\Http\Middleware\PreventBackHistory::class,
-            'role'             => \App\Http\Middleware\EnsureUserHasRole::class,
-            'user.active'      => \App\Http\Middleware\EnsureUserIsActive::class,
-            'password.changed' => \App\Http\Middleware\EnsurePasswordIsChanged::class,
+            'prevent.back' => PreventBackHistory::class,
+            'role' => EnsureUserHasRole::class,
+            'user.active' => EnsureUserIsActive::class,
+            'password.changed' => EnsurePasswordIsChanged::class,
+            'warehouse.integration' => EnsureWarehouseIntegrationToken::class,
         ]);
 
         $middleware->appendToGroup('web', [
-            \App\Http\Middleware\PreventBackHistory::class,
+            PreventBackHistory::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

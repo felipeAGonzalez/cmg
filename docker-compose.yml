@@ -26,11 +26,14 @@ services:
     depends_on:
       - db
     ports:
-      - 8080:80
+      - 127.0.0.1:8083:80
   laravel:
     image: felipe89/cmg:latest
     networks:
       net_cmg:
+      cmg_hospital_integration:
+        aliases:
+          - hospital-app
     depends_on:
       db:
         condition: service_healthy
@@ -40,7 +43,7 @@ services:
       - vendor:/var/www/html/vendor
       - composer_cache:/tmp/composer
     ports:
-      - 80:80
+      - 127.0.0.1:8082:80
     command: >
       sh -c 'composer install
       && rm -Rf public/storage || true && php artisan storage:link
@@ -52,3 +55,6 @@ volumes:
 
 networks:
   net_cmg:
+  cmg_hospital_integration:
+    external: true
+    name: cmg_hospital_integration

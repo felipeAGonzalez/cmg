@@ -1,45 +1,47 @@
 <?php
 
 use App\Http\Controllers\Admin\SpecialtyController;
+use App\Http\Controllers\AdmissionNotePdfController;
+use App\Http\Controllers\AnesthesiaConsentController;
+use App\Http\Controllers\AnesthesiaNoteController;
+use App\Http\Controllers\AnesthesiaNoteTemplateController;
+use App\Http\Controllers\AuthorizedConsentController;
+use App\Http\Controllers\CmgDelegatedAccessController;
+use App\Http\Controllers\DischargeNoteController;
+use App\Http\Controllers\DischargeTemplateController;
 use App\Http\Controllers\DoctorController;
+use App\Http\Controllers\EvolutionNoteController;
+use App\Http\Controllers\EvolutionTemplateController;
 use App\Http\Controllers\FluidBalanceCaptureController;
 use App\Http\Controllers\FluidBalanceOrderController;
 use App\Http\Controllers\FrontSheetController;
 use App\Http\Controllers\GlucoseMonitoringOrderController;
+use App\Http\Controllers\GlucoseReadingController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MedicalHistoryController;
+use App\Http\Controllers\MedicalHistoryTemplateController;
 use App\Http\Controllers\MedicationAdministrationController;
 use App\Http\Controllers\MedicationOrderController;
 use App\Http\Controllers\NursingEntryController;
 use App\Http\Controllers\NursingSheetController;
-use App\Http\Controllers\AdmissionNotePdfController;
-use App\Http\Controllers\AnesthesiaConsentController;
-use App\Http\Controllers\AuthorizedConsentController;
 use App\Http\Controllers\NursingSheetPdfController;
 use App\Http\Controllers\PasswordChangeController;
 use App\Http\Controllers\PatientController;
+use App\Http\Controllers\PostSurgicalNoteController;
+use App\Http\Controllers\PostSurgicalNoteTemplateController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\RoomTransferController;
 use App\Http\Controllers\ShiftSummaryController;
 use App\Http\Controllers\StayController;
 use App\Http\Controllers\StayDoctorController;
 use App\Http\Controllers\StayMeasurementController;
-use App\Http\Controllers\DischargeNoteController;
-use App\Http\Controllers\MedicalHistoryController;
 use App\Http\Controllers\TransfusionChecklistController;
-use App\Http\Controllers\EvolutionNoteController;
-use App\Http\Controllers\MedicalHistoryTemplateController;
-use App\Http\Controllers\EvolutionTemplateController;
-use App\Http\Controllers\DischargeTemplateController;
 use App\Http\Controllers\TransfusionNoteController;
 use App\Http\Controllers\TransfusionNoteTemplateController;
-use App\Http\Controllers\PostSurgicalNoteController;
-use App\Http\Controllers\PostSurgicalNoteTemplateController;
-use App\Http\Controllers\AnesthesiaNoteController;
-use App\Http\Controllers\AnesthesiaNoteTemplateController;
 use App\Http\Controllers\TriageRecordController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\WaitingRoomController;
 use App\Http\Controllers\VitalSignController;
+use App\Http\Controllers\WaitingRoomController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -99,6 +101,9 @@ Route::middleware(['auth', 'user.active', 'password.changed', 'prevent.back'])
             Route::get('/stays/{stay}/shift-summary', [ShiftSummaryController::class, 'edit'])->name('shiftSummary.edit');
             Route::put('/stays/{stay}/shift-summary', [ShiftSummaryController::class, 'update'])->name('shiftSummary.update');
         });
+
+        Route::post('/stays/{stay}/warehouse-access', CmgDelegatedAccessController::class)
+            ->name('stays.warehouse-access');
 
         // ─── Hojas de Enfermería: consulta (admin + nurse + médicos asignados) ─
         Route::middleware('role:admin,nurse,doctor')->group(function () {

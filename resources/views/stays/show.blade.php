@@ -757,6 +757,7 @@
         <a href="{{ route('roomTransfers.create', $stay) }}" class="btn btn-outline-warning">
             <i class="bi bi-arrow-left-right me-1"></i>Trasladar a otro cuarto
         </a>
+        @include('stays._warehouse_access')
         @endif
 
         @if(($user->isAdmin() || $user->isNurse()) && $room->canRegisterBirth())
